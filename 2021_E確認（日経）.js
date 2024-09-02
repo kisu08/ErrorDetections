@@ -1,6 +1,6 @@
 function checkDataE2021() {
   var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("確認2021(日経E)");
-  var data = sheet.getDataRange().getValues();//mitsuikeis
+  var data = sheet.getDataRange().getValues();
   var headers = data[5]; // 6行目が項目名
   var flagRow = 4; // 5行目にフラグを立てる
 
