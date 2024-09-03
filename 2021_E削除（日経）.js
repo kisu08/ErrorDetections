@@ -1,6 +1,6 @@
 function deleteDataE2021() {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
-
+//テスト
   //シート名を確認
   var sheetName = '確認2021(日経E)';
   var sheet = ss.getSheetByName(sheetName);
