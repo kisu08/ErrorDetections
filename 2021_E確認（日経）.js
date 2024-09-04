@@ -3,7 +3,7 @@ function checkDataE2021() {
   var data = sheet.getDataRange().getValues();
   var headers = data[5]; // 6行目が項目名
   var flagRow = 4; // 5行目にフラグを立てる
-
+//テスト
   // エラーチェック条件の定義
   var conditions = {
     "出典種別": function(value, row) {
