@@ -9,6 +9,10 @@ function checkDataE2023(){
     sheet.getRange(row + 1, col + 1).setBackground("yellow");
     sheet.getRange(flagRow + 1, col + 1).setValue(1);
   }
+  function setErrorHighlight2(sheet, row2, col,flagRow) {
+    sheet.getRange(row2 + 1, col + 1).setBackground("yellow");
+    sheet.getRange(flagRow + 1, col + 1).setValue(1);
+  }
 
   // 項目特有のエラー検知条件を設定する
   var conditions = {
@@ -245,13 +249,11 @@ function checkDataE2023(){
             data[row][headers.indexOf("過年度：年月／単位（加工値）")] === data[row2][headers.indexOf("過年度：年月／単位（加工値）")] &&
             (data[row2][headers.indexOf("種別名")] === "加工データ" || data[row2][headers.indexOf("種別名")] === "単位") ){
               if (data[row2][col] === "") {
-                sheet.getRange(row2 + 1, col + 1).setBackground("yellow");
-                sheet.getRange(flagRow + 1, col + 1).setValue(1);
+                setErrorHighlight2(sheet, row2, col, flagRow);
               }
               matchfound = true;
               if (data[row2][col] === ""){
-                sheet.getRange(row2 + 1, col + 1).setBackground("yellow");
-                sheet.getRange(flagRow + 1, col + 1).setValue(1);
+                setErrorHighlight2(sheet, row2, col, flagRow);
               }
             }
           }
