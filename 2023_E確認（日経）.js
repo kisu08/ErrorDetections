@@ -19,6 +19,12 @@ function checkDataE2023(){
       callback(row);
     }
   }
+  //列のループ処理を関数にして共通化
+  function iterateCols(data, row, startCol, callback) {
+    for (var col = startCol; col < data[row].length; col++) {
+      callback(col);
+    }
+  }
 
   // 項目特有のエラー検知条件を設定する
   var conditions = {
@@ -45,14 +51,14 @@ function checkDataE2023(){
       //有報・CG報告書の場合、URL、ページ数、対象範囲のデータ入力がないこと
       if (value === "資料開示" || (["URL", "ページ数", "対象範囲"].includes(value) && ["有価証券報告書", "コーポレートガバナンス報告書"].includes(data[row][headers.indexOf("資料名称")]))) {
         if (startCol !== -1) {
-          for (var col = startCol; col < data[row].length; col++) {
+          iterateCols(data, row, startCol, function(col) {
             if (data[row][col] !== "") {
               for (var errorCol = startCol; errorCol < data[row].length; errorCol++) {
                 sheet.getRange(row + 1, errorCol + 1).setBackground("yellow");
               }
               return false;
             }
-          }
+          })
         }
       }
       //「資料開示」「開示データ」「加工データ」「単位」「URL」「ページ数」「対象範囲」のいずれかであること
@@ -243,7 +249,7 @@ function checkDataE2023(){
     
     //開示データにデータが収録されている場合、加工データにもデータが収録されていること
     if (startCol !== -1 && typeName === "開示データ") {
-      for (var col = startCol; col < data[row].length; col++) {
+      iterateCols(data, row, startCol, function(col) {
         if (data[row][col] !== "") {
           var matchfound = false;
           for (var row2 = 6; row2 < data.length; row2++) {
@@ -267,7 +273,7 @@ function checkDataE2023(){
             console.log("No match found for row: " + row + ", col: " + col);
           }
         }
-      }
+      })
     };
     
     // 各項目の閾値設定(過去データの最大値・最小値から決定　※仮決め)
@@ -340,19 +346,19 @@ function checkDataE2023(){
     // 各データが閾値の範囲内であることをチェック
     function checkThresholds(typeName, data, headers, row, startCol, sheet, flagRow) {
       var thresholdData = thresholds[typeName];
-      for (var col = startCol; col < data[row].length; col++) {
+      iterateCols(data, row, startCol, function(col) {
         if (data[row][col] !== "") {
           var header = headers[col];
           var thresholdRange = thresholdData[header];
           if (!thresholdRange) {
-            continue;
+            return;
           }
           var value = parseFloat(data[row][col]);
           if (isNaN(value) || value < thresholdRange.min || value > thresholdRange.max) {
             setErrorHighlight(sheet, row, col, flagRow);
           }
         }
-      }
+      })
     }
     // 閾値チェックを実行
     if (typeName === "開示データ" || typeName === "加工データ") {
@@ -361,41 +367,41 @@ function checkDataE2023(){
 
     //「https:～」の文字列を含むこと
     if (typeName === "URL"){
-      for (var col = startCol; col < data[row].length; col++){
+      iterateCols(data, row, startCol, function(col) {
         var cellValue = String(data[row][col]);
         if(cellValue !== "" && !(cellValue.includes("https://")||cellValue.includes("http://"))){
           // エラー検知時に該当するセルの背景色を色塗りし、列の5行目に1を入力
           setErrorHighlight(sheet, row, col, flagRow);
         }
-      }
+      })
 
     //反対に、URL以外では「https:～」の文字列を含んでいないこと
     }else if (["開示データ", "加工データ", "単位", "ページ数", "対象範囲"].includes(typeName)){
-      for (var col = startCol; col < data[row].length; col++) {
+      iterateCols(data, row, startCol, function(col) {
         var cellValue = String(data[row][col]);
         if (cellValue !== "" && (cellValue.includes("https://")||cellValue.includes("http://"))) {
           // エラー検知時に該当するセルの背景色を色塗りし、列の5行目に1を入力
           setErrorHighlight(sheet, row, col, flagRow);
         }
-      }
+      })
     };
 
     //数値データであること
     if (typeName == "開示データ" || typeName == "加工データ" ){
       if (startCol !== -1){
-        for (var col = startCol; col < data[row].length; col++){
+        iterateCols(data, row, startCol, function(col) {
           if (data[row][col] !== "" && isNaN(data[row][col])){
             //エラー検知時に該当するセルの背景色を色塗りし、列の5行目に1を入力
             setErrorHighlight(sheet, row, col, flagRow);
           }
-        }
+        })
       }
     }
 
     //ページ数は特定のフォーマットであること（数値、カンマ、ハイフンで構成）
     if (typeName == "ページ数"){
       if (startCol !== -1){
-        for (var col = startCol; col < data[row].length; col++){
+        iterateCols(data, row, startCol, function(col) {
           if(data[row][col] !== ""){
             var value = data[row][col];
             var isValid = !isNaN(value) || /^[0-9,.-]+$/.test(value);
@@ -404,19 +410,19 @@ function checkDataE2023(){
             setErrorHighlight(sheet, row, col, flagRow);
             }
           }
-        }
+        })
       }
     }
 
     //文字列になっていること
     if (typeName == "単位" || typeName == "対象範囲"){
       if(startCol !== -1){
-        for (var col = startCol; col < data[row].length; col++){
+        iterateCols(data, row, startCol, function(col) {
           if(data[row][col] !== "" && !isNaN(data[row][col])){
            // エラー検知時に該当するセルの背景色を色塗りし、列の5行目に1を入力
            setErrorHighlight(sheet, row, col, flagRow);
           }
-        }
+        })
       }
     };
 
