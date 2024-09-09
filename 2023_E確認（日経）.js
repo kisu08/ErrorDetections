@@ -13,6 +13,12 @@ function checkDataE2023(){
     sheet.getRange(row2 + 1, col + 1).setBackground("yellow");
     sheet.getRange(flagRow + 1, col + 1).setValue(1);
   }
+  //行のループ処理を関数化
+  function iterateRows(data, startRow, callback) {
+    for (var row = startRow; row < data.length; row++) {
+      callback(row);
+    }
+  }
 
   // 項目特有のエラー検知条件を設定する
   var conditions = {
@@ -110,7 +116,7 @@ function checkDataE2023(){
   };
 
  // エラー検知とフラグ設定
-   for (var row = 6; row < data.length; row++) {
+ iterateRows(data, 6, function(row) {
     for (var col = 0; col < headers.length; col++) {
       var header = headers[col];
       var value = data[row][col];
@@ -118,7 +124,7 @@ function checkDataE2023(){
         setErrorHighlight(sheet, row, col, flagRow);
         }
     }
-  };
+  });
 
   //同一の開示年度で、資料名と資料公表日の組み合わせが一致していること。
   var indexMap = {};
@@ -129,7 +135,7 @@ function checkDataE2023(){
   var nameIndex = indexMap["資料名称"];
   var dateIndex = indexMap["資料公表日"];
   var dataMap = {};
-  for (var row = 6; row < data.length; row++) {
+  iterateRows(data, 6, function(row) {
     var year = data[row][yearIndex];
     var name = data[row][nameIndex].trim();
     var date = data[row][dateIndex].toString().trim();
@@ -142,14 +148,14 @@ function checkDataE2023(){
       sheet.getRange(flagRow + 1, dateIndex + 1).setValue(1);
       errorDetected = true;
     }
-  }
+  })
 
   // 同一の開示年度では、1資料につき必ず資料開示のレコードは1つであること
   function checkDocumentDisclosure() {
     var disclosureCount = 0;
     var uniqueCombinations = new Set();
 
-    for (var row = 6; row < data.length; row++) {
+    iterateRows(data, 6, function(row) {
       var documentName = data[row][headers.indexOf("資料名称")];
       var typeName = data[row][headers.indexOf("種別名")];
       var disclosureYear = data[row][headers.indexOf("開示年度")];
@@ -162,7 +168,7 @@ function checkDataE2023(){
       if(!uniqueCombinations.has(combination)){
         uniqueCombinations.add(combination);
         }
-    }
+    })
     
     if (uniqueCombinations.size !== disclosureCount) {
       // 修正箇所: エラーが発生した場合の処理
@@ -181,13 +187,13 @@ function checkDataE2023(){
     var pastYearCol = headers.indexOf("過年度：年");
     var pastYearMonthCol = headers.indexOf("過年度：年月／単位（加工値）");
 
-    for (var row = 6; row < data.length; row++) {
+    iterateRows(data, 6, function(row) {
       var typeName = data[row][typeNameCol];
       var documentName = data[row][documentNameCol];
       var pastYear = data[row][pastYearCol];
       var pastYearMonth = data[row][pastYearMonthCol];
     
-      if (typeName === "資料開示") continue;
+      if (typeName === "資料開示") return;
     
       var combination = pastYear + "_" + pastYearMonth;
       if (!baseCombinations[documentName]) {
@@ -198,7 +204,7 @@ function checkDataE2023(){
        baseCombinations[documentName][typeName] = new Set();
       }
       baseCombinations[documentName][typeName].add(combination);
-    }
+    })
    // デバッグ用にbaseCombinationsの内容を出力
    console.log(JSON.stringify(baseCombinations, null, 2));
 
@@ -231,7 +237,7 @@ function checkDataE2023(){
   }
 
   // エラー検知条件(項目共通)
-  for (var row = 6; row < data.length; row++) {
+  iterateRows(data, 6, function(row) {
     var typeName = data[row][headers.indexOf("種別名")];
     var startCol = headers.indexOf("【環境】温室効果ガス（GHG）排出量（Scope1）");
     
@@ -420,10 +426,10 @@ function checkDataE2023(){
       sheet.getRange(row + 1, environmentalReserveCol + 1).setBackground("yellow");
       sheet.getRange(flagRow + 1, environmentalReserveCol + 1).setValue(1);
     };
-  };
+  });
   
   //過年度年月が「00」の時に、過年度年と過年度年月の西暦が一致していること
-  for (var row = 6; row < data.length; row++) {
+  iterateRows(data, 6, function(row) {
     var pastYearCol = headers.indexOf("過年度：年");
     var pastYearMonthCol = headers.indexOf("過年度：年月／単位（加工値）");
     var pastYearValue = data[row][pastYearCol];
@@ -437,7 +443,7 @@ function checkDataE2023(){
         sheet.getRange(flagRow +1, pastYearMonthCol + 1).setValue(1);
       }
     }
-  };
+  });
 
   // 「開示データ」または「加工データ」は必ず1行は存在すること。
   // キー項目のインデックスを取得
@@ -460,7 +466,7 @@ function checkDataE2023(){
   var keyMap = {};
 
   // データを走査してキーごとに「開示データ」「加工データ」の存在を確認
-  for (var row = 6; row < data.length; row++) {
+  iterateRows(data, 6, function(row) {
     var key = createKey(row);
     var type = data[row][headers.indexOf("種別名")];
     if (!keyMap[key]) {
@@ -472,10 +478,10 @@ function checkDataE2023(){
     if (type === "開示データ" || type === "加工データ") {
       keyMap[key][type] = true;
     }
-  }
+  })
 
   // エラー検知とフラグ設定
-  for (var row = 6; row < data.length; row++) {
+  iterateRows(data, 6, function(row) {
     var key = createKey(row);
     var type = data[row][headers.indexOf("種別名")];
 
@@ -489,14 +495,14 @@ function checkDataE2023(){
         sheet.getRange(flagRow + 1, flagCol + 1).setBackground("red");
       }
     }
-  };
+  });
 
   //キー項目が同じレコードがないこと（重複していないこと）
   // 「出典種別」「種別名」「コード」「開示年度」「過年度：年」「過年度：年月／単位（加工値）」の列の値が完全に一致している行が複数ある場合
   var uniqueRows = {};
   var duplicateRows = [];
 
-  for (var row = 6; row < data.length; row++) {
+  iterateRows(data, 6, function(row) {
     var key = [
       data[row][headers.indexOf("出典種別")],
       data[row][headers.indexOf("種別名")],
@@ -512,7 +518,7 @@ function checkDataE2023(){
     } else {
       uniqueRows[key] = row;
     }
-  }
+  })
 
   // 重複行が見つかった場合、5行目5列目のセルの背景色を赤色にし、そのセルに1を入力し、該当する行の2列目のセルを赤色にする
   if (duplicateRows.length > 0) {
