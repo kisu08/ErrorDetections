@@ -4,6 +4,16 @@ function checkDataE2023(){
   var headers = data[5]; // 6行目が項目名
   var flagRow = 4; // 5行目にフラグを立てる
 
+  // エラー検知してイエローに変更する関数
+  function setErrorHighlight(sheet, row, col, flagRow) {
+    sheet.getRange(row + 1, col + 1).setBackground("yellow");
+    sheet.getRange(flagRow + 1, col + 1).setValue(1);
+  }
+  function setErrorHighlight2(sheet, row2, col,flagRow) {
+    sheet.getRange(row2 + 1, col + 1).setBackground("yellow");
+    sheet.getRange(flagRow + 1, col + 1).setValue(1);
+  }
+
   // 項目特有のエラー検知条件を設定する
   var conditions = {
     "出典種別": function(value, row) {
@@ -105,8 +115,7 @@ function checkDataE2023(){
       var header = headers[col];
       var value = data[row][col];
       if (conditions[header] && !conditions[header](value, row)) {
-        sheet.getRange(row + 1, col + 1).setBackground("yellow");
-        sheet.getRange(flagRow + 1, col + 1).setValue(1);
+        setErrorHighlight(sheet, row, col, flagRow);
         }
     }
   };
@@ -240,13 +249,11 @@ function checkDataE2023(){
             data[row][headers.indexOf("過年度：年月／単位（加工値）")] === data[row2][headers.indexOf("過年度：年月／単位（加工値）")] &&
             (data[row2][headers.indexOf("種別名")] === "加工データ" || data[row2][headers.indexOf("種別名")] === "単位") ){
               if (data[row2][col] === "") {
-                sheet.getRange(row2 + 1, col + 1).setBackground("yellow");
-                sheet.getRange(flagRow + 1, col + 1).setValue(1);
+                setErrorHighlight2(sheet, row2, col, flagRow);
               }
               matchfound = true;
               if (data[row2][col] === ""){
-                sheet.getRange(row2 + 1, col + 1).setBackground("yellow");
-                sheet.getRange(flagRow + 1, col + 1).setValue(1);
+                setErrorHighlight2(sheet, row2, col, flagRow);
               }
             }
           }
@@ -336,8 +343,7 @@ function checkDataE2023(){
           }
           var value = parseFloat(data[row][col]);
           if (isNaN(value) || value < thresholdRange.min || value > thresholdRange.max) {
-            sheet.getRange(row + 1, col + 1).setBackground("yellow");
-            sheet.getRange(flagRow + 1, col + 1).setValue(1);
+            setErrorHighlight(sheet, row, col, flagRow);
           }
         }
       }
@@ -353,8 +359,7 @@ function checkDataE2023(){
         var cellValue = String(data[row][col]);
         if(cellValue !== "" && !(cellValue.includes("https://")||cellValue.includes("http://"))){
           // エラー検知時に該当するセルの背景色を色塗りし、列の5行目に1を入力
-          sheet.getRange(row + 1, col + 1).setBackground("yellow");
-          sheet.getRange(flagRow + 1, col + 1).setValue(1);
+          setErrorHighlight(sheet, row, col, flagRow);
         }
       }
 
@@ -364,8 +369,7 @@ function checkDataE2023(){
         var cellValue = String(data[row][col]);
         if (cellValue !== "" && (cellValue.includes("https://")||cellValue.includes("http://"))) {
           // エラー検知時に該当するセルの背景色を色塗りし、列の5行目に1を入力
-          sheet.getRange(row + 1, col + 1).setBackground("yellow");
-          sheet.getRange(flagRow + 1, col + 1).setValue(1);
+          setErrorHighlight(sheet, row, col, flagRow);
         }
       }
     };
@@ -376,8 +380,7 @@ function checkDataE2023(){
         for (var col = startCol; col < data[row].length; col++){
           if (data[row][col] !== "" && isNaN(data[row][col])){
             //エラー検知時に該当するセルの背景色を色塗りし、列の5行目に1を入力
-            sheet.getRange(row + 1, col + 1).setBackground("yellow");
-            sheet.getRange(flagRow +1, col+1).setValue(1);
+            setErrorHighlight(sheet, row, col, flagRow);
           }
         }
       }
@@ -392,8 +395,7 @@ function checkDataE2023(){
             var isValid = !isNaN(value) || /^[0-9,.-]+$/.test(value);
             if (!isValid) {
             // エラー検知時に該当するセルの背景色を色塗りし、列の5行目に1を入力
-            sheet.getRange(row + 1, col + 1).setBackground("yellow");
-            sheet.getRange(flagRow +1, col + 1).setValue(1);
+            setErrorHighlight(sheet, row, col, flagRow);
             }
           }
         }
@@ -406,8 +408,7 @@ function checkDataE2023(){
         for (var col = startCol; col < data[row].length; col++){
           if(data[row][col] !== "" && !isNaN(data[row][col])){
            // エラー検知時に該当するセルの背景色を色塗りし、列の5行目に1を入力
-            sheet.getRange(row + 1, col + 1).setBackground("yellow");
-            sheet.getRange(flagRow +1, col + 1).setValue(1); 
+           setErrorHighlight(sheet, row, col, flagRow);
           }
         }
       }
