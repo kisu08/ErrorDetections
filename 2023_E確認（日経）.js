@@ -43,8 +43,8 @@ function checkDataE2023(){
   // 項目特有のエラー検知条件を設定する
   var conditions = {
     "出典種別": function(value, row) {
-      var documentType = data[row][headerIndices.documentNameCol];
-      var disclosureYear = data[row][headerIndices.disclosureYearCol];
+      var documentType = data[row][headerIndices.documentNameCol];//資料名称
+      var disclosureYear = data[row][headerIndices.disclosureYearCol];//開示年度
       var documentValueMap = {"有価証券報告書": "004","コーポレートガバナンス報告書": "005","企業HP": "006"};
 
       //開示年度2021年のときNULLであること
@@ -59,7 +59,7 @@ function checkDataE2023(){
     "種別名": function(value, row) {
       var validValues = ["資料開示", "開示データ", "加工データ", "単位", "URL", "ページ数", "対象範囲"];
       var isValid = validValues.includes(value);
-      var startCol = headerIndices.startCol; // インデックス再利用
+      var startCol = headerIndices.startCol; // 【環境】温室効果ガス（GHG）排出量（Scope1）
 
       //資料開示の場合、収録項目のデータ入力がないこと
       //有報・CG報告書の場合、URL、ページ数、対象範囲のデータ入力がないこと
@@ -94,7 +94,7 @@ function checkDataE2023(){
   
     "資料公表日": function(value,row) {
       //「有価証券報告書」または「コーポレートガバナンス報告書」の場合、空欄をエラーとする
-      var documentType = data[row][headerIndices.documentNameCol];
+      var documentType = data[row][headerIndices.documentNameCol];//資料名称
       if (["有価証券報告書","コーポレートガバナンス報告書"].includes(documentType) && value === ""){
         return false;
       }
@@ -151,9 +151,9 @@ function checkDataE2023(){
   for (var i = 0; i < headers.length; i++) {
     indexMap[headers[i]] = i;
   }
-  var yearIndex = headerIndices.disclosureYearCol;
-  var nameIndex = headerIndices.documentNameCol;
-  var dateIndex = headerIndices.disclosureDateCol;
+  var yearIndex = headerIndices.disclosureYearCol;//開示年度
+  var nameIndex = headerIndices.documentNameCol;//資料名称
+  var dateIndex = headerIndices.disclosureDateCol;//資料公表日
   var dataMap = {};
   iterateRows(data, 6, function(row) {
     var year = data[row][yearIndex];
@@ -176,9 +176,9 @@ function checkDataE2023(){
     var uniqueCombinations = new Set();
 
     iterateRows(data, 6, function(row) {
-    var documentName = data[row][headerIndices.documentNameCol];
-    var typeName = data[row][headerIndices.typeNameCol];
-    var disclosureYear = data[row][headerIndices.disclosureYearCol];
+    var documentName = data[row][headerIndices.documentNameCol];//資料名称
+    var typeName = data[row][headerIndices.typeNameCol];//種別名
+    var disclosureYear = data[row][headerIndices.disclosureYearCol];//開示年度
       
       if (typeName === "資料開示") {
         disclosureCount++;
@@ -192,7 +192,7 @@ function checkDataE2023(){
     
     if (uniqueCombinations.size !== disclosureCount) {
       // 修正箇所: エラーが発生した場合の処理
-      var typeNameCol = headerIndices.typeNameCol;
+      var typeNameCol = headerIndices.typeNameCol;//種別名
       sheet.getRange(flagRow + 1, typeNameCol + 1).setValue(1);
       return false;
     }
@@ -202,10 +202,10 @@ function checkDataE2023(){
   // 資料名称をキーとして、種別名ごとに「過年度：年」「過年度：年月」の組み合わせが一致するかをチェック（行の入力漏れを検知）
   function checkCombinationConsistency() {
     var baseCombinations = {};
-    var typeNameCol = headerIndices.typeNameCol; // すでに定義されたインデックスを使用
-    var documentNameCol = headerIndices.documentNameCol; // 資料名称のインデックス
-    var pastYearCol = headerIndices.pastYearCol; // 過年度：年のインデックス
-    var pastYearMonthCol = headerIndices.pastYearMonthCol; // 過年度：年月／単位（加工値）のインデックス
+    var typeNameCol = headerIndices.typeNameCol; //種別名
+    var documentNameCol = headerIndices.documentNameCol; //資料名称
+    var pastYearCol = headerIndices.pastYearCol; //過年度：年
+    var pastYearMonthCol = headerIndices.pastYearMonthCol; //過年度：年月／単位（加工値）
 
     iterateRows(data, 6, function(row) {
       var typeName = data[row][typeNameCol];
@@ -252,14 +252,14 @@ function checkDataE2023(){
 
   //エラー検知とフラグ設定（行ずれ・データ不備）
 if (!checkDocumentDisclosure() || !checkCombinationConsistency()) {
-  var typeNameCol = headerIndices.typeNameCol; // インデックス再利用
+  var typeNameCol = headerIndices.typeNameCol; //種別名
   sheet.getRange(flagRow + 1, typeNameCol + 1).setBackground("red");
 }
 
   // エラー検知条件(項目共通)
 iterateRows(data, 6, function(row) {
-  var typeName = data[row][headerIndices.typeNameCol]; // インデックス再利用
-  var startCol = headerIndices.startCol; // インデックス再利用
+  var typeName = data[row][headerIndices.typeNameCol]; //種別名
+  var startCol = headerIndices.startCol; //【環境】温室効果ガス（GHG）排出量（Scope1）
     
     //開示データにデータが収録されている場合、加工データにもデータが収録されていること
     if (startCol !== -1 && typeName === "開示データ") {
@@ -443,7 +443,7 @@ iterateRows(data, 6, function(row) {
     };
 
     //予備項目にデータが収録されていないことを確認
-    var environmentalReserveCol = headerIndices.environmentalReserveCol;  // 修正：インデックスを再利用
+    var environmentalReserveCol = headerIndices.environmentalReserveCol;  //【環境】（予備）
     if (environmentalReserveCol !== -1 && data[row][environmentalReserveCol] !== "") {
       sheet.getRange(row + 1, environmentalReserveCol + 1).setBackground("yellow");
       sheet.getRange(flagRow + 1, environmentalReserveCol + 1).setValue(1);
@@ -452,8 +452,8 @@ iterateRows(data, 6, function(row) {
   
   // 過年度年月が「00」の時に、過年度年と過年度年月の西暦が一致していること
 iterateRows(data, 6, function(row) {
-  var pastYearCol = headerIndices.pastYearCol;  // 修正：インデックスを再利用
-  var pastYearMonthCol = headerIndices.pastYearMonthCol;  // 修正：インデックスを再利用
+  var pastYearCol = headerIndices.pastYearCol;  //過年度：年
+  var pastYearMonthCol = headerIndices.pastYearMonthCol;  //過年度：年月／単位（加工値）
   var pastYearValue = data[row][pastYearCol];
   var pastYearMonthValue = data[row][pastYearMonthCol];
 
@@ -470,11 +470,11 @@ iterateRows(data, 6, function(row) {
   // 「開示データ」または「加工データ」は必ず1行は存在すること。
 // キー項目のインデックスを取得
 var keyIndices = [
-  headerIndices.sourceTypeCol,  // 修正：インデックスを再利用
-  headerIndices.codeCol,  // 修正：インデックスを再利用
-  headerIndices.disclosureYearCol,  // 修正：インデックスを再利用
-  headerIndices.pastYearCol,  // 修正：インデックスを再利用
-  headerIndices.pastYearMonthCol  // 修正：インデックスを再利用
+  headerIndices.sourceTypeCol,  //出典種別
+  headerIndices.codeCol,  //コード
+  headerIndices.disclosureYearCol,  //開示年度
+  headerIndices.pastYearCol,  //過年度：年
+  headerIndices.pastYearMonthCol  //過年度：年月／単位（加工値）
 ];
 
   // キー項目の値を連結してキーを作成する関数
@@ -490,7 +490,7 @@ var keyIndices = [
   // データを走査してキーごとに「開示データ」「加工データ」の存在を確認
   iterateRows(data, 6, function(row) {
     var key = createKey(row);
-    var type = data[row][headerIndices.typeNameCol];  // 修正：インデックスを再利用
+    var type = data[row][headerIndices.typeNameCol];  //種別名
     if (!keyMap[key]) {
       keyMap[key] = {
         "開示データ": false,
@@ -505,14 +505,14 @@ var keyIndices = [
   // エラー検知とフラグ設定
   iterateRows(data, 6, function(row) {
     var key = createKey(row);
-    var type = data[row][headerIndices.typeNameCol];  // 修正：インデックスを再利用
+    var type = data[row][headerIndices.typeNameCol];  //種別名
 
     if (type === "開示データ" || type === "加工データ") {
       if (!keyMap[key]["開示データ"] || !keyMap[key]["加工データ"]) {
         for (var col = 0; col < headers.length; col++) {
           sheet.getRange(row + 1, col + 1).setBackground("yellow");
         }
-        var flagCol = headerIndices.typeNameCol;  // 修正：インデックスを再利用
+        var flagCol = headerIndices.typeNameCol;  //種別名
         sheet.getRange(flagRow + 1, flagCol + 1).setValue(1);
         sheet.getRange(flagRow + 1, flagCol + 1).setBackground("red");
       }
