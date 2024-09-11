@@ -4,6 +4,22 @@ function checkDataEdetail2023(){
   var headers = data[5]; // 6行目が項目名
   var flagRow = 4; // 5行目にフラグを立てる
 
+   // ヘッダーインデックスを先頭で定義
+   var headerIndices = {
+    documentNameCol: headers.indexOf("資料名称"),
+    pastYearCol: headers.indexOf("過年度：年"),
+    pastYearMonthCol: headers.indexOf("過年度：年月"),
+    parentItemCol: headers.indexOf("親項目"),
+    rangeNoCol: headers.indexOf("対象範囲No."),
+    rangeCol: headers.indexOf("対象範囲"),
+    mergeFlagCol: headers.indexOf("合算フラグ"),
+    value1Col: headers.indexOf("数値1"),
+    value2Col: headers.indexOf("数値2"),
+    itemNo1Col: headers.indexOf("項番1"),
+    itemNo2Col: headers.indexOf("項番2"),
+    itemNameCol: headers.indexOf("項目名1")
+  };
+
   // エラー検知してイエローに変更する関数
   function setErrorHighlight(sheet, row, col, flagRow) {
     sheet.getRange(row + 1, col + 1).setBackground("yellow");
@@ -48,7 +64,7 @@ function checkDataEdetail2023(){
     "親項目コード": function(value,row){
       //親項目に紐づく特定の値であること
       //NULLでないこと
-      var basecode = data[row][headers.indexOf("親項目")];
+      var basecode = data[row][headerIndices.parentItemCol];//親項目
 
       //親項目と親項目コードの対応関係を定義
       var basecodeMap = {
@@ -73,7 +89,7 @@ function checkDataEdetail2023(){
 
     "URL": function(value, row){
       //有報はEDINET、CG報告書はコーポレート・ガバナンス情報サービスから参照していること
-      var disclosureName = data[row][headers.indexOf("資料名称")];
+      var disclosureName = data[row][headerIndices.documentNameCol];//資料名称
       if (disclosureName === "有価証券報告書"){
         return value.includes("https://disclosure2dl.edinet-fsa.go.jp/searchdocument/pdf");
       }else if (disclosureName === "コーポレートガバナンス報告書"){
@@ -141,11 +157,11 @@ function checkDataEdetail2023(){
       // 同じ「コード」「開示年度」「過年度：年」「過年度：年月」「親項目コード」「資料名称」「対象範囲No.」の組み合わせがあれば、「対象範囲No.」と「対象範囲」の値が一致しているかチェック
       var keyColsCovNo = ["コード", "開示年度", "過年度：年", "過年度：年月", "親項目コード", "資料名称", "対象範囲No."];
       var keyValuesCovNo = keyColsCovNo.map(function(colName) {
-        return data[row][headers.indexOf(colName)];
+        return data[row][headerIndices[colName]];
       }).join("_");
       
-      var rangeNoCol = headers.indexOf("対象範囲No.");
-      var rangeCol = headers.indexOf("対象範囲");
+      var rangeNoCol = headerIndices.rangeNoCol;//対象範囲No.
+      var rangeCol = headerIndices.rangeCol;//対象範囲
       if (seenKeys[keyValuesCovNo]) {
         // 最初に見つけた行と比較
         var firstRow = seenKeys[keyValuesCovNo];
@@ -164,7 +180,7 @@ function checkDataEdetail2023(){
       // 同じ「コード」「開示年度」「過年度：年」「過年度：年月」「親項目コード」「資料名称」「対象範囲」の組み合わせがあれば、「対象範囲No.」と「対象範囲」の値が一致しているかチェック
       var keyColsCov = ["コード", "開示年度", "過年度：年", "過年度：年月", "親項目コード", "資料名称", "対象範囲"];
       var keyValuesCov = keyColsCov.map(function(colName) {
-        return data[row][headers.indexOf(colName)];
+        return data[row][headerIndices[colName]];
       }).join("_");
 
       if (seenKeysCov[keyValuesCov]) {
@@ -225,11 +241,11 @@ function checkDataEdetail2023(){
   //合算フラグ1の場合に、正しく合計値が算出されているかをチェック
   // 「数値2」の合算と「数値1」の比較
   for (var row = 6; row < data.length; row++) {
-    var sumFlag = data[row][headers.indexOf("合算フラグ")];
+    var sumFlag = data[row][headerIndices.mergeFlagCol];//合算フラグ
     if (sumFlag === 1) {
       var keyColsSumFlag = ["コード", "開示年度", "過年度：年", "過年度：年月", "親項目コード", "資料名称", "対象範囲No.", "項番1", "項目名1"];
       var keyValuesSumFlag = keyColsSumFlag.map(function(colName) {
-        return data[row][headers.indexOf(colName)];
+        return data[row][headerIndices[colName]];
       }).join("_");
 
       // 同じキー項目を持つ行を集めて「数値2」を合算
@@ -237,12 +253,12 @@ function checkDataEdetail2023(){
       var sumValue2 = 0;
       for (var i = 6; i < data.length; i++) {
         var currentKey = keyColsSumFlag.map(function(colName) {
-          return data[i][headers.indexOf(colName)];
+          return data[i][headerIndices[colName]];
         }).join("_");
 
         if (currentKey === keyValuesSumFlag) {
-          var value2 = data[i][headers.indexOf("数値2")];
-          var itemNo2 = data[i][headers.indexOf("項番2")];
+          var value2 = data[i][headerIndices.value2Col];//数値2
+          var itemNo2 = data[i][headerIndices.itemNo2Col];//項番2
 
           // 数値2の値がNULLである場合は0として扱う
           if (value2 == null || value2 === ""){
@@ -256,21 +272,21 @@ function checkDataEdetail2023(){
         }
       }
 
-      var value1 = data[row][headers.indexOf("数値1")];
+      var value1 = data[row][headerIndices.value1Col];//数値1
 
       // 「数値2」の合算値と「数値1」が一致するかをチェック
       if (sumValue2 !== value1) {
-        var cell = sheet.getRange(row + 1, headers.indexOf("数値1") + 1);
+        var cell = sheet.getRange(row + 1, headerIndices.value1Col + 1);
         cell.setBackground("red");
-        sheet.getRange(flagRow + 1, headers.indexOf("数値1") + 1).setValue(1);
+        sheet.getRange(flagRow + 1, headerIndices.value1Col + 1).setValue(1);
       }
     }
   }
 
   //過年度年月が「00」の時に、過年度年と過年度年月の西暦が一致していること
   for (var row = 6; row < data.length; row++) {
-    var pastYearCol = headers.indexOf("過年度：年");
-    var pastYearMonthCol = headers.indexOf("過年度：年月");
+    var pastYearCol = headerIndices.pastYearCol;//過年度：年
+    var pastYearMonthCol = headerIndices.pastYearMonthCol;//過年度：年月
     var pastYearValue = data[row][pastYearCol];
     var pastYearMonthValue = data[row][pastYearMonthCol];
 
