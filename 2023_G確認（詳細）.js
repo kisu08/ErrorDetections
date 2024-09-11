@@ -224,6 +224,11 @@ function checkDataGdetail2023(){
         if (currentKey === keyValues) {
           var value2 = data[i][headers.indexOf("数値2")];
           var itemNo2 = data[i][headers.indexOf("項番2")];
+          
+          // 数値2の値がNULLである場合は0として扱う
+          if (value2 == null || value2 === ""){
+            value2 = 0;
+          }
 
           if (!uniqueValues.has(itemNo2)) {
             uniqueValues.add(itemNo2);

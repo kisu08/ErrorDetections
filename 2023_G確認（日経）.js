@@ -3,7 +3,7 @@ function checkDataG2023(){
   var data = sheet.getDataRange().getValues();
   var headers = data[5]; // 6行目が項目名
   var flagRow = 4; // 5行目にフラグを立てる
-
+//テスト
   // エラー検知条件(ヘッダー部)
   var conditions = {
     "出典種別": function(value, row) {

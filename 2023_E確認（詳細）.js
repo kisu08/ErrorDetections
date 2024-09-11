@@ -8,7 +8,7 @@ function checkDataEdetail2023(){
   var conditions = {  
     
     "コード": function(value) {
-      //4桁の数字もしくは英数字であること
+      //4桁の数字もしくは英数字であることaaa
       //NULLでないこと
       return /^[0-9]{4}$/.test(value) || /^[A-Za-z0-9]{4}$/.test(value);
     },
@@ -243,6 +243,11 @@ function checkDataEdetail2023(){
         if (currentKey === keyValuesSumFlag) {
           var value2 = data[i][headers.indexOf("数値2")];
           var itemNo2 = data[i][headers.indexOf("項番2")];
+
+          // 数値2の値がNULLである場合は0として扱う
+          if (value2 == null || value2 === ""){
+            value2 = 0;
+          }
 
           if (!uniqueValues.has(itemNo2)) {
             uniqueValues.add(itemNo2);
