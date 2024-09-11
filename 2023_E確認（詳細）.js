@@ -14,7 +14,7 @@ function checkDataEdetail2023(){
     },
 
     "開示年度": function(value) {
-      //値が「2023」あること
+      //値が「2023」あることaaaaaa
       //NULLでないこと
       return value === 2023;
     },
