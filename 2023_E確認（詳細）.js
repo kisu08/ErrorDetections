@@ -8,7 +8,7 @@ function checkDataEdetail2023(){
   var conditions = {  
     
     "コード": function(value) {
-      //4桁の数字もしくは英数字であること
+      //4桁の数字もしくは英数字であることaaa
       //NULLでないこと
       return /^[0-9]{4}$/.test(value) || /^[A-Za-z0-9]{4}$/.test(value);
     },
