@@ -254,16 +254,18 @@ function checkDataEdetail2023(){
     var sumFlag = data[row][headerIndices.mergeFlagCol];//合算フラグ
     if (sumFlag === 1) {
       var keyColsSumFlag = [headerIndices.codeCol,headerIndices.disclosureYearCol,headerIndices.pastYearCol,headerIndices.pastYearMonthCol,headerIndices.parentItemCodeCol,headerIndices.documentNameCol,headerIndices.rangeNoCol,headerIndices.itemNo1Col,headerIndices.itemNameCol];
-      var keyValuesSumFlag = keyColsSumFlag.map(function(colName) {
-        return data[row][headerIndices[colName]];
+      var keyValuesSumFlag = keyColsSumFlag.map(function(colIndex) {
+        return data[row][colIndex];
       }).join("_");
 
-      // 同じキー項目を持つ行を集めて「数値2」を合算
+      // 合算のための変数を初期化
       var uniqueValues = new Set();
       var sumValue2 = 0;
+
+     // 同じキー項目を持つ行を探して数値2を合算
       for (var i = 6; i < data.length; i++) {
-        var currentKey = keyColsSumFlag.map(function(colName) {
-          return data[i][headerIndices[colName]];
+        var currentKey = keyColsSumFlag.map(function(colIndex) {
+          return data[i][colIndex];
         }).join("_");
 
         if (currentKey === keyValuesSumFlag) {
