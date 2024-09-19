@@ -6,10 +6,13 @@ function checkDataEdetail2023(){
 
    // ヘッダーインデックスを先頭で定義
    var headerIndices = {
+    codeCol: headers.indexOf("コード"), // コード列のインデックスを追加
+    disclosureYearCol: headers.indexOf("開示年度"), // 開示年度列のインデックスを追加
     documentNameCol: headers.indexOf("資料名称"),
     pastYearCol: headers.indexOf("過年度：年"),
     pastYearMonthCol: headers.indexOf("過年度：年月"),
     parentItemCol: headers.indexOf("親項目"),
+    parentItemCodeCol: headers.indexOf("親項目コード"), // 親項目コード列のインデックスを追加
     rangeNoCol: headers.indexOf("対象範囲No."),
     rangeCol: headers.indexOf("対象範囲"),
     mergeFlagCol: headers.indexOf("合算フラグ"),
@@ -155,13 +158,15 @@ function checkDataEdetail2023(){
       
       //「対象範囲No.」と「対象範囲」の組み合わせが適切かをチェック
       // 同じ「コード」「開示年度」「過年度：年」「過年度：年月」「親項目コード」「資料名称」「対象範囲No.」の組み合わせがあれば、「対象範囲No.」と「対象範囲」の値が一致しているかチェック
-      var keyColsCovNo = ["コード", "開示年度", "過年度：年", "過年度：年月", "親項目コード", "資料名称", "対象範囲No."];
-      var keyValuesCovNo = keyColsCovNo.map(function(colName) {
-        return data[row][headerIndices[colName]];
-      }).join("_");
-      
-      var rangeNoCol = headerIndices.rangeNoCol;//対象範囲No.
-      var rangeCol = headerIndices.rangeCol;//対象範囲
+// 対象範囲No.の組み合わせをチェックするためのキー列
+      var keyColsCovNo = [headerIndices.codeCol, headerIndices.disclosureYearCol, headerIndices.pastYearCol, headerIndices.pastYearMonthCol, headerIndices.parentItemCodeCol, headerIndices.documentNameCol, headerIndices.rangeNoCol];
+      var keyValuesCovNoArray = keyColsCovNo.map(function(colIndex) {
+        var value = data[row][colIndex]; // colIndexを使ってデータを取得
+        return value;
+      });
+      var keyValuesCovNo = keyValuesCovNoArray.join("_");
+      var rangeNoCol = headerIndices.rangeNoCol; //対象範囲No.
+      var rangeCol = headerIndices.rangeCol;     //対象範囲
       if (seenKeys[keyValuesCovNo]) {
         // 最初に見つけた行と比較
         var firstRow = seenKeys[keyValuesCovNo];
@@ -171,6 +176,7 @@ function checkDataEdetail2023(){
           sheet.getRange(row + 1, rangeCol + 1).setBackground("red");
           sheet.getRange(flagRow + 1, rangeNoCol + 1).setValue(1);
           sheet.getRange(flagRow + 1, rangeCol + 1).setValue(1);
+        } else {
         }
       } else {
         // 新しいキーの組み合わせを記録
@@ -178,10 +184,13 @@ function checkDataEdetail2023(){
       }
       
       // 同じ「コード」「開示年度」「過年度：年」「過年度：年月」「親項目コード」「資料名称」「対象範囲」の組み合わせがあれば、「対象範囲No.」と「対象範囲」の値が一致しているかチェック
-      var keyColsCov = ["コード", "開示年度", "過年度：年", "過年度：年月", "親項目コード", "資料名称", "対象範囲"];
-      var keyValuesCov = keyColsCov.map(function(colName) {
-        return data[row][headerIndices[colName]];
-      }).join("_");
+      var keyColsCov = [headerIndices.codeCol, headerIndices.disclosureYearCol, headerIndices.pastYearCol, headerIndices.pastYearMonthCol, headerIndices.parentItemCodeCol, headerIndices.documentNameCol, headerIndices.rangeCol];
+      // keyValuesCovの値を取得する際もインデックスを使う
+      var keyValuesCovArray = keyColsCov.map(function(colIndex) {
+        var value = data[row][colIndex]; // colIndexを使ってデータを取得
+        return value;
+      });
+      var keyValuesCov = keyValuesCovArray.join("_");
 
       if (seenKeysCov[keyValuesCov]) {
         // 最初に見つけた行と比較
@@ -192,6 +201,7 @@ function checkDataEdetail2023(){
           sheet.getRange(row + 1, rangeCol + 1).setBackground("red");
           sheet.getRange(flagRow + 1, rangeNoCol + 1).setValue(1);
           sheet.getRange(flagRow + 1, rangeCol + 1).setValue(1);
+        } else {
         }
       } else {
         // 新しいキーの組み合わせを記録
@@ -243,7 +253,7 @@ function checkDataEdetail2023(){
   for (var row = 6; row < data.length; row++) {
     var sumFlag = data[row][headerIndices.mergeFlagCol];//合算フラグ
     if (sumFlag === 1) {
-      var keyColsSumFlag = ["コード", "開示年度", "過年度：年", "過年度：年月", "親項目コード", "資料名称", "対象範囲No.", "項番1", "項目名1"];
+      var keyColsSumFlag = [headerIndices.codeCol,headerIndices.disclosureYearCol,headerIndices.pastYearCol,headerIndices.pastYearMonthCol,headerIndices.parentItemCodeCol,headerIndices.documentNameCol,headerIndices.rangeNoCol,headerIndices.itemNo1Col,headerIndices.itemNameCol];
       var keyValuesSumFlag = keyColsSumFlag.map(function(colName) {
         return data[row][headerIndices[colName]];
       }).join("_");
