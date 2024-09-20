@@ -23,6 +23,12 @@ function checkDataGdetail2023(){
     itemNameCol: headers.indexOf("項目名1")
   };
 
+  // エラー検知してイエローに変更する関数
+  function setErrorHighlight(sheet, row, col, flagRow) {
+    sheet.getRange(row + 1, col + 1).setBackground("yellow");
+    sheet.getRange(flagRow + 1, col + 1).setValue(1);
+  }
+
   // 項目特有のエラー検知条件を設定する
   var conditions = {  
     
@@ -150,8 +156,7 @@ function checkDataGdetail2023(){
       
       //conditionsで定義した項目特有のエラーを検知したかをチェック
       if (conditions[header] && !conditions[header](value, row)) {
-        sheet.getRange(row + 1, col + 1).setBackground("yellow");
-        sheet.getRange(flagRow + 1, col + 1).setValue(1);
+        setErrorHighlight(sheet, row, col, flagRow);
       }
       
       // 同じ「コード」「開示年度」「過年度：年」「過年度：年月」「親項目コード」「資料名称」「対象範囲」の組み合わせがあれば、「対象範囲No.」と「対象範囲」の値が一致しているかチェック
@@ -179,20 +184,17 @@ function checkDataGdetail2023(){
 
             //ヘッダーが「項番」で始まる場合、それの列の値が自然数であることをチェック
       if (header.startsWith("項番") && value !== "" && !(Number.isInteger(value) && value >=1)){
-        sheet.getRange(row + 1, col + 1).setBackground("yellow");
-        sheet.getRange(flagRow + 1, col + 1).setValue(1);
+        setErrorHighlight(sheet, row, col, flagRow);
       }
 
       //ヘッダーが「数値」で始まる場合、その列の値が数値であることをチェック
       if (header.startsWith("数値") && isNaN(value)){
-        sheet.getRange(row + 1, col + 1).setBackground("yellow");
-        sheet.getRange(flagRow + 1, col + 1).setValue(1);
+        setErrorHighlight(sheet, row, col, flagRow);
       }
 
       //ヘッダーが「項目名」「単位」で始まる場合、その列の値が文字列であることをチェック
       if ((header.startsWith("項目名") || header.startsWith("単位")) && value!=="" &&!isNaN(value)){
-        sheet.getRange(row + 1, col + 1).setBackground("yellow");
-        sheet.getRange(flagRow + 1, col + 1).setValue(1);
+        setErrorHighlight(sheet, row, col, flagRow);
       }
 
       //項番と項目名のNULLチェック
@@ -208,14 +210,12 @@ function checkDataGdetail2023(){
           
           //項目名に値が収録されているにも関わらず、項番がNULLであればエラー検知
           if (header === numHeader && numValue === "" && itemValue !== ""){
-            sheet.getRange(row + 1, col + 1).setBackground("yellow");
-            sheet.getRange(flagRow + 1, col +1).setValue(1);
+            setErrorHighlight(sheet, row, col, flagRow);
           }
 
           //項番に値が収録されているにも関わらず、項目名がNULLであればエラー検知
           if (header === itemHeader && itemValue === "" && numValue !== ""){
-            sheet.getRange(row + 1, col +1).setBackground("yellow");
-            sheet.getRange(flagRow + 1, col + 1).setValue(1);
+            setErrorHighlight(sheet, row, col, flagRow);
           }
         }
       }
