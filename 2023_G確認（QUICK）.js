@@ -4,10 +4,24 @@ function checkDataGQ2023(){
   var headers = data[5]; // 6行目が項目名
   var flagRow = 4; // 5行目にフラグを立てる
 
+  // ヘッダーインデックスを先頭に定義
+  var headerIndices = {
+    documentNameCol: headers.indexOf("資料名称"),
+    disclosureYearCol: headers.indexOf("開示年度"),
+    typeNameCol: headers.indexOf("種別名"),
+    sourceTypeCol: headers.indexOf("出典種別"),
+    codeCol: headers.indexOf("コード"),
+    pastYearCol: headers.indexOf("過年度：年"),
+    pastYearMonthCol: headers.indexOf("過年度：年月／単位（加工値）"),
+    startCol: headers.indexOf("【ガバナンス】取締役会開催数"),
+    environmentalReserveCol: headers.indexOf("【環境】（予備）"),
+    disclosureDateCol: headers.indexOf("資料公表日")
+  };
+
   // エラー検知条件(ヘッダー部)
   var conditions = {
     "出典種別": function(value, row) {
-      var documentType = data[row][headers.indexOf("資料名称")];
+      var documentType = data[row][headerIndices.documentNameCol];//資料名称
 
       // 資料名称と出典種別の対応関係を定義
       var documentValueMap = {
@@ -16,7 +30,7 @@ function checkDataGQ2023(){
         "企業HP": "006"
       };
 
-      var disclosureYear = data[row][headers.indexOf("開示年度")];
+      var disclosureYear = data[row][headerIndices.disclosureYearCol];//開示年度
 
       //開示年度2021年のときNULLであること
       if (disclosureYear === 2021) {
@@ -32,13 +46,13 @@ function checkDataGQ2023(){
  
       var validValues = ["資料開示", "開示データ", "加工データ", "単位", "URL", "ページ数", "対象範囲"];
       var isValid = validValues.includes(value);
-      var startCol = headers.indexOf("【ガバナンス】取締役会開催数");
+      var startCol = headerIndices.startCol; // 【ガバナンス】取締役会開催数
     
       //資料開示の場合、収録項目のデータ入力がないこと
       //有報・CG報告書の場合、URL、ページ数、対象範囲のデータ入力がないこと
       if (value === "資料開示" || 
       (["URL", "ページ数", "対象範囲"].includes(value) && 
-      ["有価証券報告書", "コーポレートガバナンス報告書"].includes(data[row][headers.indexOf("資料名称")]))) {
+      ["有価証券報告書", "コーポレートガバナンス報告書"].includes(data[row][headerIndices.typeNameCol]))) {
         if (startCol !== -1) {
           for (var col = startCol; col < data[row].length; col++) {
             if (data[row][col] !== "") {
@@ -61,7 +75,7 @@ function checkDataGQ2023(){
     },
 
     "資料名称": function(value) {
-      if(["有価証券報告書","コーポレートガバナンス報告書"].includes(value) && ["URL", "ページ数", "対象範囲"].includes(data[row][headers.indexOf("種別名")])){
+      if(["有価証券報告書","コーポレートガバナンス報告書"].includes(value) && ["URL", "ページ数", "対象範囲"].includes(data[row][headerIndices.typeNameCol])){
         return false
       }
       //「有価証券報告書」「コーポレートガバナンス報告書」「企業HP」のいずれかであること
@@ -70,7 +84,7 @@ function checkDataGQ2023(){
   
     "資料公表日": function(value,row) {
       //「有価証券報告書」または「コーポレートガバナンス報告書」の場合、空欄をエラーとする
-      var documentType = data[row][headers.indexOf("資料名称")];
+      var documentType = data[row][headerIndices.documentNameCol];//資料名称
       if (["有価証券報告書","コーポレートガバナンス報告書"].includes(documentType) && value === ""){
         return false;
       }
@@ -96,7 +110,7 @@ function checkDataGQ2023(){
     
     "過年度：年": function(value, row) {
       //種別名が資料開示のときNULLであること
-      if (data[row][headers.indexOf("種別名")] === "資料開示") {
+      if (data[row][headerIndices.typeNameCol]  === "資料開示") {
         return value === "";
       }
       //4桁の数字であること
@@ -104,7 +118,7 @@ function checkDataGQ2023(){
     },
     "過年度：年月／単位（加工値）": function(value, row) {
       //種別名が資料開示のときNULLであること
-      if (data[row][headers.indexOf("種別名")] === "資料開示") {
+      if (data[row][headerIndices.typeNameCol]  === "資料開示") {
         return value === "";
       }
       //6桁の数字で末尾が「00」～「12」であること
@@ -157,9 +171,9 @@ function checkDataGQ2023(){
     var errorRows = [];
 
     for (var row = 6; row < data.length; row++) {
-      var documentName = data[row][headers.indexOf("資料名称")];
-      var typeName = data[row][headers.indexOf("種別名")];
-      var disclosureYear = data[row][headers.indexOf("開示年度")];
+      var documentName = data[row][headerIndices.documentNameCol];//資料名称
+      var typeName = data[row][headerIndices.typeNameCol];//種別名
+      var disclosureYear = data[row][headerIndices.disclosureYearCol];//開示年度
       
       if (typeName === "資料開示") {
         disclosureCount++;
@@ -173,7 +187,7 @@ function checkDataGQ2023(){
     
     if (uniqueCombinations.size !== disclosureCount) {
       // 修正箇所: エラーが発生した場合の処理
-      var typeNameCol = headers.indexOf("種別名");
+      var typeNameCol = headerIndices.typeNameCol;//種別名
       sheet.getRange(flagRow + 1, typeNameCol + 1).setValue(1);
       return false;
     }
@@ -182,16 +196,16 @@ function checkDataGQ2023(){
   // 資料名称をキーとして、種別名ごとに「過年度：年」「過年度：年月」の組み合わせが一致するかをチェック（行の入力漏れを検知）
   function checkCombinationConsistency() {
     var baseCombinations = {};
-    var typeNameCol = headers.indexOf("種別名");
-    var documentNameCol = headers.indexOf("資料名称");
-    var pastYearCol = headers.indexOf("過年度：年");
-    var pastYearMonthCol = headers.indexOf("過年度：年月／単位（加工値）");
+    var typeNameCol = headerIndices.typeNameCol; //種別名
+    var documentNameCol = headerIndices.documentNameCol; // 資料名称
+    var pastYearCol = headerIndices.pastYearCol; // 過年度：年
+    var pastYearMonthCol = headerIndices.pastYearMonthCol; // 過年度：年月／単位（加工値）
 
     for (var row = 6; row < data.length; row++) {
-      var typeName = data[row][typeNameCol];
-      var documentName = data[row][documentNameCol];
-      var pastYear = data[row][pastYearCol];
-      var pastYearMonth = data[row][pastYearMonthCol];
+      var typeName = data[row][typeNameCol];//種別名
+      var documentName = data[row][documentNameCol];//資料名称
+      var pastYear = data[row][pastYearCol];// 過年度：年
+      var pastYearMonth = data[row][pastYearMonthCol];// 過年度：年月／単位（加工値）
     
       if (typeName === "資料開示") continue;
     
@@ -232,36 +246,36 @@ function checkDataGQ2023(){
 
   //エラー検知とフラグ設定（行ずれ・データ不備）
   if (!checkDocumentDisclosure() || !checkCombinationConsistency()) {
-    var typeNameCol = headers.indexOf("種別名");
+    var typeNameCol = headerIndices.typeNameCol; //種別名
     sheet.getRange(flagRow + 1, typeNameCol + 1).setBackground("red");
   }
 
   // エラー検知条件(項目共通)
   for (var row = 6; row < data.length; row++) {
-    var typeName = data[row][headers.indexOf("種別名")];
-    var startCol = headers.indexOf("【ガバナンス】取締役会開催数");
+    var typeName = data[row][typeNameCol];//種別名
+    var startCol = headerIndices.startCol; // 【ガバナンス】取締役会開催数
     
     //開示データにデータが収録されている場合、加工データと単位にもデータが収録されていること
-    if (startCol !== -1 && typeName === "開示データ") {
-      for (var col = startCol; col < data[row].length; col++) {
+    if (headerIndices.startCol !== -1 && data[row][headerIndices.typeNameCol] === "開示データ") {
+      for (var col = headerIndices.startCol; col < data[row].length; col++) {
         if (data[row][col] !== "") {
           var matchfound = false;
           for (var row2 = 6; row2 < data.length; row2++) {
-            if (data[row][headers.indexOf("出典種別")] === data[row2][headers.indexOf("出典種別")] &&
-            data[row][headers.indexOf("コード")] === data[row2][headers.indexOf("コード")] &&
-            data[row][headers.indexOf("資料名称")] === data[row2][headers.indexOf("資料名称")] &&
-            data[row][headers.indexOf("開示年度")] === data[row2][headers.indexOf("開示年度")] &&
-            data[row][headers.indexOf("過年度：年")] === data[row2][headers.indexOf("過年度：年")] &&
-            data[row][headers.indexOf("過年度：年月／単位（加工値）")] === data[row2][headers.indexOf("過年度：年月／単位（加工値）")]){
-              var exclusionData = (headers.indexOf("【ガバナンス】ガバナンス体系（組織体系）")||headers.indexOf("【ガバナンス】取締役会の議長"));
+            if (data[row][headerIndices.sourceTypeCol] === data[row2][headerIndices.sourceTypeCol] &&
+              data[row][headerIndices.codeCol] === data[row2][headerIndices.codeCol] &&
+              data[row][headerIndices.documentNameCol] === data[row2][headerIndices.documentNameCol] &&
+              data[row][headerIndices.disclosureYearCol] === data[row2][headerIndices.disclosureYearCol] &&
+              data[row][headerIndices.pastYearCol] === data[row2][headerIndices.pastYearCol] &&
+              data[row][headerIndices.pastYearMonthCol] === data[row2][headerIndices.pastYearMonthCol]){
+            var exclusionData = (headerIndices.environmentalReserveCol || headers.indexOf("【ガバナンス】取締役会の議長"));
               if (exclusionData){
-                //加工データのチェックは行う
-                if (data[row2][headers.indexOf("種別名")] === "加工データ" && data[row2][col] === ""){
-                  sheet.getRange(row2 + 1, col + 1).setBackground("yellow");
-                  sheet.getRange(flagRow + 1, col + 1).setValue(1);
-                }
+                // 加工データのチェックは行う
+            if (data[row2][headerIndices.typeNameCol] === "加工データ" && data[row2][col] === "") {
+              sheet.getRange(row2 + 1, col + 1).setBackground("yellow");
+              sheet.getRange(flagRow + 1, col + 1).setValue(1);
+             }
               }else{
-                if ((data[row2][headers.indexOf("種別名")] === "加工データ" || data[row2][headers.indexOf("種別名")] === "単位") && data[row2][col] === ""){
+                if ((data[row2][headerIndices.typeNameCol] === "加工データ" ||data[row2][headerIndices.typeNameCol] === "単位") && data[row2][col] === "") {
                   sheet.getRange(row2 + 1, col + 1).setBackground("yellow");
                   sheet.getRange(flagRow + 1, col + 1).setValue(1);
                 }
@@ -399,8 +413,8 @@ function checkDataGQ2023(){
 
   //過年度年月が「00」の時に、過年度年と過年度年月の西暦が一致していること
   for (var row = 6; row < data.length; row++) {
-    var pastYearCol = headers.indexOf("過年度：年");
-    var pastYearMonthCol = headers.indexOf("過年度：年月／単位（加工値）");
+    var pastYearCol = headerIndices.pastYearCol;  // 過年度：年
+    var pastYearMonthCol = headerIndices.pastYearMonthCol;// 過年度：年月／単位（加工値）
     var pastYearValue = data[row][pastYearCol];
     var pastYearMonthValue = data[row][pastYearMonthCol];
 
@@ -418,11 +432,11 @@ function checkDataGQ2023(){
   // 「開示データ」または「加工データ」は必ず1行は存在すること。
   // キー項目のインデックスを取得
   var keyIndices = [
-    headers.indexOf("出典種別"),
-    headers.indexOf("コード"),
-    headers.indexOf("開示年度"),
-    headers.indexOf("過年度：年"),
-    headers.indexOf("過年度：年月／単位（加工値）")
+    headerIndices.sourceTypeCol,  // 出典種別
+    headerIndices.codeCol,  // コード
+    headerIndices.disclosureYearCol,  //開示年度
+    headerIndices.pastYearCol,  // 過年度：年
+    headerIndices.pastYearMonthCol  // 過年度：年月／単位（加工値）
   ];
 
   // キー項目の値を連結してキーを作成する関数
@@ -438,7 +452,7 @@ function checkDataGQ2023(){
   // データを走査してキーごとに「開示データ」「加工データ」の存在を確認
   for (var row = 6; row < data.length; row++) {
     var key = createKey(row);
-    var type = data[row][headers.indexOf("種別名")];
+    var type = data[row][headerIndices.typeNameCol];  //種別名
     if (!keyMap[key]) {
       keyMap[key] = {
         "開示データ": false,
@@ -453,14 +467,14 @@ function checkDataGQ2023(){
   // エラー検知とフラグ設定
   for (var row = 6; row < data.length; row++) {
     var key = createKey(row);
-    var type = data[row][headers.indexOf("種別名")];
+    var type = data[row][headerIndices.typeNameCol];  //種別名
 
     if (type === "開示データ" || type === "加工データ") {
       if (!keyMap[key]["開示データ"] || !keyMap[key]["加工データ"]) {
         for (var col = 0; col < headers.length; col++) {
           sheet.getRange(row + 1, col + 1).setBackground("yellow");
         }
-        var flagCol = headers.indexOf("種別名");
+        var flagCol = headerIndices.typeNameCol;  //種別名
         sheet.getRange(flagRow + 1, flagCol + 1).setValue(1);
         sheet.getRange(flagRow + 1, flagCol + 1).setBackground("red");
       }
@@ -474,12 +488,12 @@ function checkDataGQ2023(){
 
   for (var row = 6; row < data.length; row++) {
     var key = [
-      data[row][headers.indexOf("出典種別")],
-      data[row][headers.indexOf("種別名")],
-      data[row][headers.indexOf("コード")],
-      data[row][headers.indexOf("開示年度")],
-      data[row][headers.indexOf("過年度：年")],
-      data[row][headers.indexOf("過年度：年月／単位（加工値）")]
+      data[row][headerIndices.sourceTypeCol],  // 出典種別
+      data[row][headerIndices.typeNameCol],    // 種別名
+      data[row][headerIndices.codeCol],        // コード
+      data[row][headerIndices.disclosureYearCol], // 開示年度
+      data[row][headerIndices.pastYearCol],    // 過年度：年
+      data[row][headerIndices.pastYearMonthCol], // 過年度：年月／単位（加工値）
     ].join("|");
 
     if (uniqueRows[key]) {
