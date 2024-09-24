@@ -26,6 +26,38 @@ function checkDataS2023(){
     sheet.getRange(row2 + 1, col + 1).setBackground("yellow");
     sheet.getRange(flagRow + 1, col + 1).setValue(1);
   }
+  // 有価証券報告書からの収録条件を共通化
+  function checkForReport(value, row, data, headerIndices, requiredDocument = "有価証券報告書", exclude = false) {
+    var typeName = data[row][headerIndices.typeNameCol];
+    var documentName = data[row][headerIndices.documentNameCol];
+    
+    // 開示データまたは加工データの場合に、指定した報告書名で条件が合致するかチェック
+    var conditionMet = (typeName === "開示データ" || typeName === "加工データ") && (documentName === requiredDocument);
+    
+    if (exclude) {
+      // 指定した報告書で「ない場合」をチェック
+      return !conditionMet || value === "";
+    } else {
+      // 指定した報告書で「ある場合」をチェック
+      return conditionMet ? value === "" : true;
+    }
+  }
+  // 有価証券報告書からの収録条件を共通化
+  function checkForReport(value, row, data, headerIndices, requiredDocument = "有価証券報告書", exclude = false) {
+    var typeName = data[row][headerIndices.typeNameCol];
+    var documentName = data[row][headerIndices.documentNameCol];
+    
+    // 開示データまたは加工データの場合に、指定した報告書名で条件が合致するかチェック
+    var conditionMet = (typeName === "開示データ" || typeName === "加工データ") && (documentName === requiredDocument);
+    
+    if (exclude) {
+      // 指定した報告書で「ない場合」をチェック
+      return !conditionMet || value === "";
+    } else {
+      // 指定した報告書で「ある場合」をチェック
+      return conditionMet ? value === "" : true;
+    }
+  }
   // エラー検知条件(ヘッダー部)
   var conditions = {
     "出典種別": function(value, row) {
@@ -146,118 +178,45 @@ function checkDataS2023(){
     }
   };
 
-  //各項目の条件指定
-  var textdata = {
-    "【社会】男性役員数":function(value,row){
-      //有価証券報告書であること。
-      if ((data[row][headerIndices.typeNameCol] === "開示データ" ||data[row][headerIndices.typeNameCol] === "加工データ") && !(data[row][headerIndices.documentNameCol]  === "有価証券報告書")){
-          return value === "";
-      }
-      return true;
-    },
-
-    "【社会】女性役員数":function(value,row){
-      //有価証券報告書であること。
-      if ((data[row][headerIndices.typeNameCol] === "開示データ" ||data[row][headerIndices.typeNameCol] === "加工データ") && !(data[row][headerIndices.documentNameCol]  === "有価証券報告書")){
-          return value === "";
-      }
-      return true;
-    },
-
-    "【社会】女性役員比率":function(value,row){
-      //有価証券報告書であること。
-      if ((data[row][headerIndices.typeNameCol] === "開示データ" ||data[row][headerIndices.typeNameCol] === "加工データ") && !(data[row][headerIndices.documentNameCol]  === "有価証券報告書")){
-          return value === "";
-      }
-      return true;
-    },
-  };
-  // エラー検知とフラグ設定（各項目の条件指定）
-  for (var row = 6; row < data.length; row++) {
-    for (var col = 0; col < headers.length; col++) {
-      var header = headers[col];
-      var value = data[row][col];
-      if (textdata[header] && !textdata[header](value, row)) {
-        setErrorHighlight(sheet, row, col, flagRow);
-        }
-    }
-  };
-
-    //各項目の条件指定
-    var textdata = {
-    "【社会】課長以上部長未満の女性管理職比率":function(value,row){
-      //有価証券報告書からの収録は不要。
-      if ((data[row][headerIndices.typeNameCol] === "開示データ" ||data[row][headerIndices.typeNameCol] === "加工データ") && (data[row][headerIndices.documentNameCol]  === "有価証券報告書")){
-          return value === "";
-      }
-      return true;
-    },
-
-    "【社会】ジェンダーペイギャップ指数":function(value,row){
-      //有価証券報告書からの収録は不要。
-      if ((data[row][headerIndices.typeNameCol] === "開示データ" ||data[row][headerIndices.typeNameCol] === "加工データ") && (data[row][headerIndices.documentNameCol]  === "有価証券報告書")){
-          return value === "";
-      }
-      return true;
-    },
-
-    "【社会】正規従業員数":function(value,row){
-      //有価証券報告書からの収録は不要。
-      if ((data[row][headerIndices.typeNameCol] === "開示データ" ||data[row][headerIndices.typeNameCol] === "加工データ") && (data[row][headerIndices.documentNameCol]  === "有価証券報告書")){
-          return value === "";
-      }
-      return true;
-    },
-
-    "【社会】非正規従業員数":function(value,row){
-      //有価証券報告書からの収録は不要。
-      if ((data[row][headerIndices.typeNameCol] === "開示データ" ||data[row][headerIndices.typeNameCol] === "加工データ") && (data[row][headerIndices.documentNameCol]  === "有価証券報告書")){
-          return value === "";
-      }
-      return true;
-    },
-
-    "【社会】非正規従業員比率":function(value,row){
-      //有価証券報告書からの収録は不要。
-      if ((data[row][headerIndices.typeNameCol] === "開示データ" ||data[row][headerIndices.typeNameCol] === "加工データ") && (data[row][headerIndices.documentNameCol]  === "有価証券報告書")){
-          return value === "";
-      }
-      return true;
-    },
-
-    "【社会】男性従業員の育児休業取得期間":function(value,row){
-      //有価証券報告書からの収録は不要。
-      if ((data[row][headerIndices.typeNameCol] === "開示データ" ||data[row][headerIndices.typeNameCol] === "加工データ") && (data[row][headerIndices.documentNameCol]  === "有価証券報告書")){
-          return value === "";
-      }
-      return true;
-    },
-
-    "【社会】女性従業員の育児休業取得期間":function(value,row){
-      //有価証券報告書からの収録は不要。
-      if ((data[row][headerIndices.typeNameCol] === "開示データ" ||data[row][headerIndices.typeNameCol] === "加工データ") && (data[row][headerIndices.documentNameCol]  === "有価証券報告書")){
-          return value === "";
-      }
-      return true;
-    },
-
-    "【社会】男性従業員の育児休業取得率":function(value,row){
-      //有価証券報告書からの収録は不要。
-      if ((data[row][headerIndices.typeNameCol] === "開示データ" ||data[row][headerIndices.typeNameCol] === "加工データ") && (data[row][headerIndices.documentNameCol]  === "有価証券報告書")){
-          return value === "";
-      }
-      return true;
-    },
-
-    "【社会】女性従業員の育児休業取得率":function(value,row){
-      //有価証券報告書からの収録は不要。
-      if ((data[row][headerIndices.typeNameCol] === "開示データ" ||data[row][headerIndices.typeNameCol] === "加工データ") && (data[row][headerIndices.documentNameCol]  === "有価証券報告書")){
-          return value === "";
-      }
-      return true;
-    },
-
-  };
+  // 各項目の条件指定
+var textdata = {
+  "【社会】男性役員数": function(value, row) {
+    return checkForReport(value, row, data, headerIndices, "有価証券報告書", true); // 否定条件
+  },
+  "【社会】女性役員数": function(value, row) {
+    return checkForReport(value, row, data, headerIndices, "有価証券報告書", true); // 否定条件
+  },
+  "【社会】女性役員比率": function(value, row) {
+    return checkForReport(value, row, data, headerIndices, "有価証券報告書", true); // 否定条件
+  },
+  "【社会】課長以上部長未満の女性管理職比率": function(value, row) {
+    return checkForReport(value, row, data, headerIndices); // 肯定条件（デフォルト）
+  },
+  "【社会】ジェンダーペイギャップ指数": function(value, row) {
+    return checkForReport(value, row, data, headerIndices); // 肯定条件（デフォルト）
+  },
+  "【社会】正規従業員数": function(value, row) {
+    return checkForReport(value, row, data, headerIndices); // 肯定条件（デフォルト）
+  },
+  "【社会】非正規従業員数": function(value, row) {
+    return checkForReport(value, row, data, headerIndices); // 肯定条件（デフォルト）
+  },
+  "【社会】非正規従業員比率": function(value, row) {
+    return checkForReport(value, row, data, headerIndices); // 肯定条件（デフォルト）
+  },
+  "【社会】男性従業員の育児休業取得期間": function(value, row) {
+    return checkForReport(value, row, data, headerIndices); // 肯定条件（デフォルト）
+  },
+  "【社会】女性従業員の育児休業取得期間": function(value, row) {
+    return checkForReport(value, row, data, headerIndices); // 肯定条件（デフォルト）
+  },
+  "【社会】男性従業員の育児休業取得率": function(value, row) {
+    return checkForReport(value, row, data, headerIndices); // 肯定条件（デフォルト）
+  },
+  "【社会】女性従業員の育児休業取得率": function(value, row) {
+    return checkForReport(value, row, data, headerIndices); // 肯定条件（デフォルト）
+  }
+};
 
   // エラー検知とフラグ設定（各項目の条件指定）
   for (var row = 6; row < data.length; row++) {
