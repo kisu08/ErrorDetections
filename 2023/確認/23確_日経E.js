@@ -23,10 +23,6 @@ function checkDataE2023(){
     sheet.getRange(row + 1, col + 1).setBackground("yellow");
     sheet.getRange(flagRow + 1, col + 1).setValue(1);
   }
-  function setErrorHighlight2(sheet, row2, col,flagRow) {
-    sheet.getRange(row2 + 1, col + 1).setBackground("yellow");
-    sheet.getRange(flagRow + 1, col + 1).setValue(1);
-  }
   //行のループ処理を関数化
   function iterateRows(data, startRow, callback) {
     for (var row = startRow; row < data.length; row++) {
@@ -277,11 +273,11 @@ iterateRows(data, 6, function(row) {
               (data[row2][headerIndices.typeNameCol] === "加工データ" || data[row2][headerIndices.typeNameCol] === "単位") // 種別名
             ) {
               if (data[row2][col] === "") {
-                setErrorHighlight2(sheet, row2, col, flagRow);
+                setErrorHighlight(sheet, row2, col, flagRow);
               }
               matchfound = true;
               if (data[row2][col] === ""){
-                setErrorHighlight2(sheet, row2, col, flagRow);
+                setErrorHighlight(sheet, row2, col, flagRow);
               }
             }
           }

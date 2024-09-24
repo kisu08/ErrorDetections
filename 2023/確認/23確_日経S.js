@@ -22,10 +22,6 @@ function checkDataS2023(){
     sheet.getRange(row + 1, col + 1).setBackground("yellow");
     sheet.getRange(flagRow + 1, col + 1).setValue(1);
   }
-  function setErrorHighlight2(sheet, row2, col,flagRow) {
-    sheet.getRange(row2 + 1, col + 1).setBackground("yellow");
-    sheet.getRange(flagRow + 1, col + 1).setValue(1);
-  }
   // 有価証券報告書からの収録条件を共通化
   function checkForReport(value, row, data, headerIndices, requiredDocument = "有価証券報告書", exclude = false) {
     var typeName = data[row][headerIndices.typeNameCol];
@@ -360,11 +356,11 @@ var textdata = {
               data[row][headerIndices.pastYearMonthCol] === data[row2][headerIndices.pastYearMonthCol] &&
               (data[row2][headerIndices.typeNameCol] === "加工データ" || data[row2][headerIndices.typeNameCol] === "単位")) {
               if (data[row2][col] === "") {
-                setErrorHighlight2(sheet, row2, col,flagRow);
+                setErrorHighlight(sheet, row2, col,flagRow);
               }
               matchfound = true;
               if (data[row2][col] === ""){
-                setErrorHighlight2(sheet, row2, col,flagRow);
+                setErrorHighlight(sheet, row2, col,flagRow);
               }
             }
           }
