@@ -25,6 +25,22 @@ function setErrorHighlight2(sheet, row2, col,flagRow) {
   sheet.getRange(row2 + 1, col + 1).setBackground("yellow");
   sheet.getRange(flagRow + 1, col + 1).setValue(1);
 }
+// 有価証券報告書からの収録条件を共通化
+function checkForReport(value, row, data, headerIndices, requiredDocument = "有価証券報告書", exclude = false) {
+  var typeName = data[row][headerIndices.typeNameCol];
+  var documentName = data[row][headerIndices.documentNameCol];
+  
+  // 開示データまたは加工データの場合に、指定した報告書名で条件が合致するかチェック
+  var conditionMet = (typeName === "開示データ" || typeName === "加工データ") && (documentName === requiredDocument);
+  
+  if (exclude) {
+    // 指定した報告書で「ない場合」をチェック
+    return !conditionMet || value === "";
+  } else {
+    // 指定した報告書で「ある場合」をチェック
+    return conditionMet ? value === "" : true;
+  }
+}
   // エラー検知条件(ヘッダー部)
   var conditions = {
     "出典種別": function(value, row) {
@@ -146,112 +162,52 @@ function setErrorHighlight2(sheet, row2, col,flagRow) {
     }
   };
 
-  //各項目の条件指定
-  var textdata = {
-    "【ガバナンス】取締役人数":function(value,row){
-      //コーポレートガバナンス報告書であること。
-      if ((data[row][headerIndices.typeNameCol] === "開示データ" ||data[row][headerIndices.typeNameCol] === "加工データ") && !(data[row][headerIndices.documentNameCol]  === "有価証券報告書")){
-        return value === "";
-      }
-      return true;
-    },
-
-    "【ガバナンス】社外取締役人数":function(value,row){
-      //コーポレートガバナンス報告書であること。
-      if ((data[row][headerIndices.typeNameCol] === "開示データ" ||data[row][headerIndices.typeNameCol] === "加工データ") && !(data[row][headerIndices.documentNameCol]  === "有価証券報告書")){
-        return value === "";
-      }
-      return true;
-    },
-
-    "【ガバナンス】独立社外取締役人数":function(value,row){
-      //コーポレートガバナンス報告書であること。
-      if ((data[row][headerIndices.typeNameCol] === "開示データ" ||data[row][headerIndices.typeNameCol] === "加工データ") && !(data[row][headerIndices.documentNameCol]  === "有価証券報告書")){
-        return value === "";
-      }
-      return true;
-    },
-
-    "【ガバナンス】独立社外取締役比率":function(value,row){
-      //コーポレートガバナンス報告書であること。
-      if ((data[row][headerIndices.typeNameCol] === "開示データ" ||data[row][headerIndices.typeNameCol] === "加工データ") && !(data[row][headerIndices.documentNameCol]  === "有価証券報告書")){
-        return value === "";
-      }
-      return true;
-    },
-
-    "【ガバナンス】監査役人数":function(value,row){
-      //コーポレートガバナンス報告書であること。
-      if ((data[row][headerIndices.typeNameCol] === "開示データ" ||data[row][headerIndices.typeNameCol] === "加工データ") && !(data[row][headerIndices.documentNameCol]  === "有価証券報告書")){
-        return value === "";
-      }
-      return true;
-    },
-
-    "【ガバナンス】独立社外監査役人数":function(value,row){
-      //コーポレートガバナンス報告書であること。
-      if ((data[row][headerIndices.typeNameCol] === "開示データ" ||data[row][headerIndices.typeNameCol] === "加工データ") && !(data[row][headerIndices.documentNameCol]  === "有価証券報告書")){
-        return value === "";
-      }
-      return true;
-    },
-
-    "【ガバナンス】独立社外監査役比率":function(value,row){
-      //コーポレートガバナンス報告書であること。
-      if ((data[row][headerIndices.typeNameCol] === "開示データ" ||data[row][headerIndices.typeNameCol] === "加工データ") && !(data[row][headerIndices.documentNameCol]  === "有価証券報告書")){
-        return value === "";
-      }
-      return true;
-    },
-
-    "【ガバナンス】役員の固定報酬":function(value,row){
-      //有価証券報告書であること。
-      if ((data[row][headerIndices.typeNameCol] === "開示データ" ||data[row][headerIndices.typeNameCol] === "加工データ") && !(data[row][headerIndices.documentNameCol]  === "有価証券報告書")){
-        return value === "";
-      }
-      return true;
-    },
-
-    "【ガバナンス】役員の変動報酬":function(value,row){
-      //有価証券報告書であること。
-      if ((data[row][headerIndices.typeNameCol] === "開示データ" ||data[row][headerIndices.typeNameCol] === "加工データ") && !(data[row][headerIndices.documentNameCol]  === "有価証券報告書")){
-        return value === "";
-      }
-      return true;
-    },
-
-    "【ガバナンス】役員の変動報酬比率":function(value,row){
-      //有価証券報告書であること。
-      if ((data[row][headerIndices.typeNameCol] === "開示データ" ||data[row][headerIndices.typeNameCol] === "加工データ") && !(data[row][headerIndices.documentNameCol]  === "有価証券報告書")){
-        return value === "";
-      }
-      return true;
-    },
-
-    "【ガバナンス】ガバナンス体系（組織体系）":function(value,row){
-      //特定の値であること。参照資料がコーポレートガバナンス報告書であること。
-      if ((data[row][headerIndices.typeNameCol] === "開示データ" ||data[row][headerIndices.typeNameCol] === "加工データ") && (data[row][headerIndices.documentNameCol]  === "有価証券報告書")){
-        return ["監査役設置会社", "委員会設置会社", "監査等委員会設置会社","指名委員会等設置会社"].includes(value);
-      }
-      return true;
-    },
-
-    "【ガバナンス】取締役会の議長":function(value,row){
-      //特定の値であること。参照資料がコーポレートガバナンス報告書であること。
-      if ((data[row][headerIndices.typeNameCol] === "開示データ" ||data[row][headerIndices.typeNameCol] === "加工データ") && (data[row][headerIndices.documentNameCol]  === "有価証券報告書")){
-        return ["社長", "会長（社長を兼任している場合を除く）", "会長・社長以外の執行役を兼任する取締役","会長・社長以外の代表取締役","社外取締役","その他の取締役","なし"].includes(value);
-      }
-      return true;
-    },
-      
-    "【ガバナンス】外国人株式保有比率":function(value,row){
-      //特定の値であること。参照資料がコーポレートガバナンス報告書であること。
-      if ((data[row][headerIndices.typeNameCol] === "開示データ" ||data[row][headerIndices.typeNameCol] === "加工データ") && (data[row][headerIndices.documentNameCol]  === "有価証券報告書")){
-        return ["10%未満", "10%以上20%未満", "20%以上30%未満","30%以上"].includes(value);
-      }
-      return true;
-    }
-  };
+  // 各項目の条件指定
+var textdata = {
+  "【ガバナンス】取締役人数": function(value, row) {
+    return checkForReport(value, row, data, headerIndices, "有価証券報告書", true); // 否定条件
+  },
+  "【ガバナンス】社外取締役人数": function(value, row) {
+    return checkForReport(value, row, data, headerIndices, "有価証券報告書", true); // 否定条件
+  },
+  "【ガバナンス】独立社外取締役人数": function(value, row) {
+    return checkForReport(value, row, data, headerIndices, "有価証券報告書", true); // 否定条件
+  },
+  "【ガバナンス】独立社外取締役比率": function(value, row) {
+    return checkForReport(value, row, data, headerIndices, "有価証券報告書", true); // 否定条件
+  },
+  "【ガバナンス】監査役人数": function(value, row) {
+    return checkForReport(value, row, data, headerIndices, "有価証券報告書", true); // 否定条件
+  },
+  "【ガバナンス】独立社外監査役人数": function(value, row) {
+    return checkForReport(value, row, data, headerIndices, "有価証券報告書", true); // 否定条件
+  },
+  "【ガバナンス】独立社外監査役比率": function(value, row) {
+    return checkForReport(value, row, data, headerIndices, "有価証券報告書", true); // 否定条件
+  },
+  "【ガバナンス】役員の固定報酬": function(value, row) {
+    return checkForReport(value, row, data, headerIndices); // 肯定条件（デフォルト）
+  },
+  "【ガバナンス】役員の変動報酬": function(value, row) {
+    return checkForReport(value, row, data, headerIndices); // 肯定条件（デフォルト）
+  },
+  "【ガバナンス】役員の変動報酬比率": function(value, row) {
+    return checkForReport(value, row, data, headerIndices); // 肯定条件（デフォルト）
+  },
+  "【ガバナンス】ガバナンス体系（組織体系）": function(value, row) {
+    return checkForReport(value, row, data, headerIndices) &&
+      ["監査役設置会社", "委員会設置会社", "監査等委員会設置会社", "指名委員会等設置会社"].includes(value); // 特定の値
+  },
+  "【ガバナンス】取締役会の議長": function(value, row) {
+    return checkForReport(value, row, data, headerIndices) &&
+      ["社長", "会長（社長を兼任している場合を除く）", "会長・社長以外の執行役を兼任する取締役", 
+       "会長・社長以外の代表取締役", "社外取締役", "その他の取締役", "なし"].includes(value); // 特定の値
+  },
+  "【ガバナンス】外国人株式保有比率": function(value, row) {
+    return checkForReport(value, row, data, headerIndices) &&
+      ["10%未満", "10%以上20%未満", "20%以上30%未満", "30%以上"].includes(value); // 特定の値
+  }
+};
 
   // エラー検知とフラグ設定（各項目の条件指定）
   for (var row = 6; row < data.length; row++) {
