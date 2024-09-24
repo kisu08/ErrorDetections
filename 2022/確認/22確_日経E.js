@@ -4,19 +4,44 @@ function checkDataE2022(){
   var headers = data[5]; // 6行目が項目名
   var flagRow = 4; // 5行目にフラグを立てる
 
-  // エラー検知条件(ヘッダー部)
+    // ヘッダーインデックスを先頭に定義
+    var headerIndices = {
+      documentNameCol: headers.indexOf("資料名称"),
+      disclosureYearCol: headers.indexOf("開示年度"),
+      typeNameCol: headers.indexOf("種別名"),
+      sourceTypeCol: headers.indexOf("出典種別"),
+      codeCol: headers.indexOf("コード"),
+      pastYearCol: headers.indexOf("過年度：年"),
+      pastYearMonthCol: headers.indexOf("過年度：年月／単位（加工値）"),
+      startCol: headers.indexOf("【環境】温室効果ガス（GHG）排出量（Scope1）"),
+      environmentalReserveCol: headers.indexOf("【環境】（予備）"),
+      disclosureDateCol: headers.indexOf("資料公表日")
+    };
+
+  // エラー検知してイエローに変更する関数
+  function setErrorHighlight(sheet, row, col, flagRow) {
+    sheet.getRange(row + 1, col + 1).setBackground("yellow");
+    sheet.getRange(flagRow + 1, col + 1).setValue(1);
+  }
+  //行のループ処理を関数化
+  function iterateRows(data, startRow, callback) {
+    for (var row = startRow; row < data.length; row++) {
+      callback(row);
+    }
+  }
+  //列のループ処理を関数にして共通化
+  function iterateCols(data, row, startCol, callback) {
+    for (var col = startCol; col < data[row].length; col++) {
+      callback(col);
+    }
+  }
+
+  // 項目特有のエラー検知条件を設定する
   var conditions = {
     "出典種別": function(value, row) {
-      var documentType = data[row][headers.indexOf("資料名称")];
-
-      // 資料名称と出典種別の対応関係を定義
-      var documentValueMap = {
-        "有価証券報告書": "004",
-        "コーポレートガバナンス報告書": "005",
-        "企業HP": "006"
-      };
-
-      var disclosureYear = data[row][headers.indexOf("開示年度")];
+      var documentType = data[row][headerIndices.documentNameCol];//資料名称
+      var disclosureYear = data[row][headerIndices.disclosureYearCol];//開示年度
+      var documentValueMap = {"有価証券報告書": "004","コーポレートガバナンス報告書": "005","企業HP": "006"};
 
       //開示年度2021年のときNULLであること
       if (disclosureYear === 2021) {
@@ -29,25 +54,22 @@ function checkDataE2022(){
     },
   
     "種別名": function(value, row) {
- 
       var validValues = ["資料開示", "開示データ", "加工データ", "単位", "URL", "ページ数", "対象範囲"];
       var isValid = validValues.includes(value);
-      var startCol = headers.indexOf("【環境】温室効果ガス（GHG）排出量（Scope1）");
-    
+      var startCol = headerIndices.startCol; // 【環境】温室効果ガス（GHG）排出量（Scope1）
+
       //資料開示の場合、収録項目のデータ入力がないこと
       //有報・CG報告書の場合、URL、ページ数、対象範囲のデータ入力がないこと
-      if (value === "資料開示" || 
-      (["URL", "ページ数", "対象範囲"].includes(value) && 
-      ["有価証券報告書", "コーポレートガバナンス報告書"].includes(data[row][headers.indexOf("資料名称")]))) {
-        if (startCol !== -1) {
-          for (var col = startCol; col < data[row].length; col++) {
+      if (value === "資料開示" || (["URL", "ページ数", "対象範囲"].includes(value) && ["有価証券報告書", "コーポレートガバナンス報告書"].includes(data[row][headerIndices.documentNameCol]))) {
+        if (headerIndices.startCol !== -1) {
+          iterateCols(data, row, headerIndices.startCol, function(col) {
             if (data[row][col] !== "") {
-              for (var errorCol = startCol; errorCol < data[row].length; errorCol++) {
+              for (var errorCol = headerIndices.startCol; errorCol < data[row].length; errorCol++) {
                 sheet.getRange(row + 1, errorCol + 1).setBackground("yellow");
               }
               return false;
             }
-          }
+          })
         }
       }
 
@@ -62,7 +84,7 @@ function checkDataE2022(){
     },
 
     "資料名称": function(value) {
-      if(["有価証券報告書","コーポレートガバナンス報告書"].includes(value) && ["URL", "ページ数", "対象範囲"].includes(data[row][headers.indexOf("種別名")])){
+      if(["有価証券報告書","コーポレートガバナンス報告書"].includes(value) && ["URL", "ページ数", "対象範囲"].includes(data[row][headerIndices.typeNameCol])){
         return false
       }
       //「有価証券報告書」「コーポレートガバナンス報告書」「企業HP」のいずれかであること
@@ -71,7 +93,7 @@ function checkDataE2022(){
   
     "資料公表日": function(value,row) {
       //「有価証券報告書」または「コーポレートガバナンス報告書」の場合、空欄をエラーとする
-      var documentType = data[row][headers.indexOf("資料名称")];
+      var documentType = data[row][headerIndices.documentNameCol];//資料名称
       if (["有価証券報告書","コーポレートガバナンス報告書"].includes(documentType) && value === ""){
         return false;
       }
@@ -98,7 +120,7 @@ function checkDataE2022(){
     
     "過年度：年": function(value, row) {
       //種別名が資料開示のときNULLであること
-      if (data[row][headers.indexOf("種別名")] === "資料開示") {
+      if (data[row][headerIndices.typeNameCol] === "資料開示") {
         return value === "";
       }
       //4桁の数字であること
@@ -106,7 +128,7 @@ function checkDataE2022(){
     },
     "過年度：年月／単位（加工値）": function(value, row) {
       //種別名が資料開示のときNULLであること
-      if (data[row][headers.indexOf("種別名")] === "資料開示") {
+      if (data[row][headerIndices.typeNameCol] === "資料開示") {
         return value === "";
       }
       //6桁の数字で末尾が「00」～「12」であること
@@ -115,29 +137,27 @@ function checkDataE2022(){
     }
   };
 
- // エラー検知とフラグ設定（属性データ）
-   for (var row = 6; row < data.length; row++) {
+ // エラー検知とフラグ設定
+ iterateRows(data, 6, function(row) {
     for (var col = 0; col < headers.length; col++) {
       var header = headers[col];
       var value = data[row][col];
       if (conditions[header] && !conditions[header](value, row)) {
-        sheet.getRange(row + 1, col + 1).setBackground("yellow");
-        sheet.getRange(flagRow + 1, col + 1).setValue(1);
+        setErrorHighlight(sheet, row, col, flagRow);
         }
     }
-  };
-
+  });
 
   //同一の開示年度で、資料名と資料公表日の組み合わせが一致していること。
   var indexMap = {};
   for (var i = 0; i < headers.length; i++) {
     indexMap[headers[i]] = i;
   }
-  var yearIndex = indexMap["開示年度"];
-  var nameIndex = indexMap["資料名称"];
-  var dateIndex = indexMap["資料公表日"];
+  var yearIndex = headerIndices.disclosureYearCol;//開示年度
+  var nameIndex = headerIndices.documentNameCol;//資料名称
+  var dateIndex = headerIndices.disclosureDateCol;//資料公表日
   var dataMap = {};
-  for (var row = 6; row < data.length; row++) {
+  iterateRows(data, 6, function(row) {
     var year = data[row][yearIndex];
     var name = data[row][nameIndex].trim();
     var date = data[row][dateIndex].toString().trim();
@@ -150,7 +170,7 @@ function checkDataE2022(){
       sheet.getRange(flagRow + 1, dateIndex + 1).setValue(1);
       errorDetected = true;
     }
-  }
+  })
 
   // 同一の開示年度では、1資料につき必ず資料開示のレコードは1つであること
   function checkDocumentDisclosure() {
@@ -158,10 +178,10 @@ function checkDataE2022(){
     var uniqueCombinations = new Set();
     var errorRows = [];
 
-    for (var row = 6; row < data.length; row++) {
-      var documentName = data[row][headers.indexOf("資料名称")];
-      var typeName = data[row][headers.indexOf("種別名")];
-      var disclosureYear = data[row][headers.indexOf("開示年度")];
+    iterateRows(data, 6, function(row) {
+    var documentName = data[row][headerIndices.documentNameCol];//資料名称
+    var typeName = data[row][headerIndices.typeNameCol];//種別名
+    var disclosureYear = data[row][headerIndices.disclosureYearCol];//開示年度
       
       if (typeName === "資料開示") {
         disclosureCount++;
@@ -171,31 +191,32 @@ function checkDataE2022(){
       if(!uniqueCombinations.has(combination)){
         uniqueCombinations.add(combination);
         }
-    }
+    })
     
     if (uniqueCombinations.size !== disclosureCount) {
       // 修正箇所: エラーが発生した場合の処理
-      var typeNameCol = headers.indexOf("種別名");
+      var typeNameCol = headerIndices.typeNameCol;//種別名
       sheet.getRange(flagRow + 1, typeNameCol + 1).setValue(1);
       return false;
     }
     return true;
   };
+
   // 資料名称をキーとして、種別名ごとに「過年度：年」「過年度：年月」の組み合わせが一致するかをチェック（行の入力漏れを検知）
   function checkCombinationConsistency() {
     var baseCombinations = {};
-    var typeNameCol = headers.indexOf("種別名");
-    var documentNameCol = headers.indexOf("資料名称");
-    var pastYearCol = headers.indexOf("過年度：年");
-    var pastYearMonthCol = headers.indexOf("過年度：年月／単位（加工値）");
+    var typeNameCol = headerIndices.typeNameCol; //種別名
+    var documentNameCol = headerIndices.documentNameCol; //資料名称
+    var pastYearCol = headerIndices.pastYearCol; //過年度：年
+    var pastYearMonthCol = headerIndices.pastYearMonthCol; //過年度：年月／単位（加工値）
 
-    for (var row = 6; row < data.length; row++) {
+    iterateRows(data, 6, function(row) {
       var typeName = data[row][typeNameCol];
       var documentName = data[row][documentNameCol];
       var pastYear = data[row][pastYearCol];
       var pastYearMonth = data[row][pastYearMonthCol];
     
-      if (typeName === "資料開示") continue;
+      if (typeName === "資料開示") return;
     
       var combination = pastYear + "_" + pastYearMonth;
       if (!baseCombinations[documentName]) {
@@ -206,7 +227,7 @@ function checkDataE2022(){
        baseCombinations[documentName][typeName] = new Set();
       }
       baseCombinations[documentName][typeName].add(combination);
-    }
+    })
    // デバッグ用にbaseCombinationsの内容を出力
    console.log(JSON.stringify(baseCombinations, null, 2));
 
@@ -233,37 +254,37 @@ function checkDataE2022(){
   }
 
   //エラー検知とフラグ設定（行ずれ・データ不備）
-  if (!checkDocumentDisclosure() || !checkCombinationConsistency()) {
-    var typeNameCol = headers.indexOf("種別名");
-    sheet.getRange(flagRow + 1, typeNameCol + 1).setBackground("red");
-  }
+if (!checkDocumentDisclosure() || !checkCombinationConsistency()) {
+  var typeNameCol = headerIndices.typeNameCol; //種別名
+  sheet.getRange(flagRow + 1, typeNameCol + 1).setBackground("red");
+}
 
   // エラー検知条件(項目共通)
-  for (var row = 6; row < data.length; row++) {
-    var typeName = data[row][headers.indexOf("種別名")];
-    var startCol = headers.indexOf("【環境】温室効果ガス（GHG）排出量（Scope1）");
+iterateRows(data, 6, function(row) {
+  var typeName = data[row][headerIndices.typeNameCol]; //種別名
+  var startCol = headerIndices.startCol; //【環境】温室効果ガス（GHG）排出量（Scope1）
     
     //開示データにデータが収録されている場合、加工データにもデータが収録されていること
     if (startCol !== -1 && typeName === "開示データ") {
-      for (var col = startCol; col < data[row].length; col++) {
+      iterateCols(data, row, startCol, function(col) {
         if (data[row][col] !== "") {
           var matchfound = false;
           for (var row2 = 6; row2 < data.length; row2++) {
-            if (data[row][headers.indexOf("出典種別")] === data[row2][headers.indexOf("出典種別")] &&
-            data[row][headers.indexOf("コード")] === data[row2][headers.indexOf("コード")] &&
-            data[row][headers.indexOf("資料名称")] === data[row2][headers.indexOf("資料名称")] &&
-            data[row][headers.indexOf("開示年度")] === data[row2][headers.indexOf("開示年度")] &&
-            data[row][headers.indexOf("過年度：年")] === data[row2][headers.indexOf("過年度：年")] &&
-            data[row][headers.indexOf("過年度：年月／単位（加工値）")] === data[row2][headers.indexOf("過年度：年月／単位（加工値）")] &&
-            (data[row2][headers.indexOf("種別名")] === "加工データ" || data[row2][headers.indexOf("種別名")] === "単位") ){
+            if (
+              data[row][headerIndices.sourceTypeCol] === data[row2][headerIndices.sourceTypeCol] && // 出典種別
+              data[row][headerIndices.codeCol] === data[row2][headerIndices.codeCol] && // コード
+              data[row][headerIndices.documentNameCol] === data[row2][headerIndices.documentNameCol] && // 資料名称
+              data[row][headerIndices.disclosureYearCol] === data[row2][headerIndices.disclosureYearCol] && // 開示年度
+              data[row][headerIndices.pastYearCol] === data[row2][headerIndices.pastYearCol] && // 過年度：年
+              data[row][headerIndices.pastYearMonthCol] === data[row2][headerIndices.pastYearMonthCol] && // 過年度：年月／単位（加工値）
+              (data[row2][headerIndices.typeNameCol] === "加工データ" || data[row2][headerIndices.typeNameCol] === "単位") // 種別名
+            ) {
               if (data[row2][col] === "") {
-                sheet.getRange(row2 + 1, col + 1).setBackground("yellow");
-                sheet.getRange(flagRow + 1, col + 1).setValue(1);
+                setErrorHighlight(sheet, row2, col, flagRow);
               }
               matchfound = true;
               if (data[row2][col] === ""){
-                sheet.getRange(row2 + 1, col + 1).setBackground("yellow");
-                sheet.getRange(flagRow + 1, col + 1).setValue(1);
+                setErrorHighlight(sheet, row2, col, flagRow);
               }
             }
           }
@@ -271,7 +292,7 @@ function checkDataE2022(){
             console.log("No match found for row: " + row + ", col: " + col);
           }
         }
-      }
+      })
     };
     
     // 各項目の閾値設定(過去データの最大値・最小値から決定　※仮決め)
@@ -344,20 +365,19 @@ function checkDataE2022(){
     // 各データが閾値の範囲内であることをチェック
     function checkThresholds(typeName, data, headers, row, startCol, sheet, flagRow) {
       var thresholdData = thresholds[typeName];
-      for (var col = startCol; col < data[row].length; col++) {
+      iterateCols(data, row, startCol, function(col) {
         if (data[row][col] !== "") {
           var header = headers[col];
           var thresholdRange = thresholdData[header];
           if (!thresholdRange) {
-            continue;
+            return;
           }
           var value = parseFloat(data[row][col]);
           if (isNaN(value) || value < thresholdRange.min || value > thresholdRange.max) {
-            sheet.getRange(row + 1, col + 1).setBackground("yellow");
-            sheet.getRange(flagRow + 1, col + 1).setValue(1);
+            setErrorHighlight(sheet, row, col, flagRow);
           }
         }
-      }
+      })
     }
     // 閾値チェックを実行
     if (typeName === "開示データ" || typeName === "加工データ") {
@@ -366,76 +386,71 @@ function checkDataE2022(){
 
     //「https:～」の文字列を含むこと
     if (typeName === "URL"){
-      for (var col = startCol; col < data[row].length; col++){
+      iterateCols(data, row, startCol, function(col) {
         var cellValue = String(data[row][col]);
         if(cellValue !== "" && !(cellValue.includes("https://")||cellValue.includes("http://"))){
           // エラー検知時に該当するセルの背景色を色塗りし、列の5行目に1を入力
-          sheet.getRange(row + 1, col + 1).setBackground("yellow");
-          sheet.getRange(flagRow + 1, col + 1).setValue(1);
+          setErrorHighlight(sheet, row, col, flagRow);
         }
-      }
+      })
 
     //反対に、URL以外では「https:～」の文字列を含んでいないこと
     }else if (["開示データ", "加工データ", "単位", "ページ数", "対象範囲"].includes(typeName)){
-      for (var col = startCol; col < data[row].length; col++) {
+      iterateCols(data, row, startCol, function(col) {
         var cellValue = String(data[row][col]);
         if (cellValue !== "" && (cellValue.includes("https://")||cellValue.includes("http://"))) {
           // エラー検知時に該当するセルの背景色を色塗りし、列の5行目に1を入力
-          sheet.getRange(row + 1, col + 1).setBackground("yellow");
-          sheet.getRange(flagRow + 1, col + 1).setValue(1);
+          setErrorHighlight(sheet, row, col, flagRow);
         }
-      }
+      })
     };
 
     //数値データであること
     if (typeName == "開示データ" || typeName == "加工データ" ){
       if (startCol !== -1){
-        for (var col = startCol; col < data[row].length; col++){
+        iterateCols(data, row, startCol, function(col) {
           if (data[row][col] !== "" && isNaN(data[row][col])){
             //エラー検知時に該当するセルの背景色を色塗りし、列の5行目に1を入力
-            sheet.getRange(row + 1, col + 1).setBackground("yellow");
-            sheet.getRange(flagRow +1, col+1).setValue(1);
+            setErrorHighlight(sheet, row, col, flagRow);
           }
-        }
+        })
       }
     }
 
     //ページ数は特定のフォーマットであること（数値、カンマ、ハイフンで構成）
     if (typeName == "ページ数"){
       if (startCol !== -1){
-        for (var col = startCol; col < data[row].length; col++){
+        iterateCols(data, row, startCol, function(col) {
           if(data[row][col] !== ""){
             var value = data[row][col];
             var isValid = !isNaN(value) || /^[0-9,.-]+$/.test(value);
             if (!isValid) {
             // エラー検知時に該当するセルの背景色を色塗りし、列の5行目に1を入力
-            sheet.getRange(row + 1, col + 1).setBackground("yellow");
-            sheet.getRange(flagRow +1, col + 1).setValue(1);
+            setErrorHighlight(sheet, row, col, flagRow);
             }
           }
-        }
+        })
       }
     }
 
     //文字列になっていること
     if (typeName == "単位" || typeName == "対象範囲"){
       if(startCol !== -1){
-        for (var col = startCol; col < data[row].length; col++){
+        iterateCols(data, row, startCol, function(col) {
           if(data[row][col] !== "" && !isNaN(data[row][col])){
            // エラー検知時に該当するセルの背景色を色塗りし、列の5行目に1を入力
-            sheet.getRange(row + 1, col + 1).setBackground("yellow");
-            sheet.getRange(flagRow +1, col + 1).setValue(1); 
+           setErrorHighlight(sheet, row, col, flagRow);
           }
-        }
+        })
       }
     };
 
     //予備項目にデータが収録されていないことを確認
-    var environmentalReserveCol = headers.indexOf("【環境】（予備）");
+    var environmentalReserveCol = headerIndices.environmentalReserveCol;  //【環境】（予備）
     if (environmentalReserveCol !== -1 && data[row][environmentalReserveCol] !== "") {
       sheet.getRange(row + 1, environmentalReserveCol + 1).setBackground("yellow");
       sheet.getRange(flagRow + 1, environmentalReserveCol + 1).setValue(1);
-    }
-  };
+    };
+  });
   SpreadsheetApp.getUi().alert('確認処理が正常に完了しました');
 };

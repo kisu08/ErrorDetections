@@ -38,22 +38,6 @@ function checkDataS2023(){
       return conditionMet ? value === "" : true;
     }
   }
-  // 有価証券報告書からの収録条件を共通化
-  function checkForReport(value, row, data, headerIndices, requiredDocument = "有価証券報告書", exclude = false) {
-    var typeName = data[row][headerIndices.typeNameCol];
-    var documentName = data[row][headerIndices.documentNameCol];
-    
-    // 開示データまたは加工データの場合に、指定した報告書名で条件が合致するかチェック
-    var conditionMet = (typeName === "開示データ" || typeName === "加工データ") && (documentName === requiredDocument);
-    
-    if (exclude) {
-      // 指定した報告書で「ない場合」をチェック
-      return !conditionMet || value === "";
-    } else {
-      // 指定した報告書で「ある場合」をチェック
-      return conditionMet ? value === "" : true;
-    }
-  }
   // エラー検知条件(ヘッダー部)
   var conditions = {
     "出典種別": function(value, row) {
