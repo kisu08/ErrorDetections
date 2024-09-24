@@ -4,10 +4,44 @@ function checkDataS2022(){
   var headers = data[5]; // 6行目が項目名
   var flagRow = 4; // 5行目にフラグを立てる
 
+  // ヘッダーインデックスを先頭に定義
+  var headerIndices = {
+    documentNameCol: headers.indexOf("資料名称"),
+    disclosureYearCol: headers.indexOf("開示年度"),
+    typeNameCol: headers.indexOf("種別名"),
+    sourceTypeCol: headers.indexOf("出典種別"),
+    codeCol: headers.indexOf("コード"),
+    pastYearCol: headers.indexOf("過年度：年"),
+    pastYearMonthCol: headers.indexOf("過年度：年月／単位（加工値）"),
+    startCol: headers.indexOf("【社会】男性従業員数"),
+    disclosureDateCol: headers.indexOf("資料公表日")
+  };
+
+  // エラー検知してイエローに変更する関数
+  function setErrorHighlight(sheet, row, col, flagRow) {
+    sheet.getRange(row + 1, col + 1).setBackground("yellow");
+    sheet.getRange(flagRow + 1, col + 1).setValue(1);
+  }
+  // 有価証券報告書からの収録条件を共通化
+  function checkForReport(value, row, data, headerIndices, requiredDocument = "有価証券報告書", exclude = false) {
+    var typeName = data[row][headerIndices.typeNameCol];
+    var documentName = data[row][headerIndices.documentNameCol];
+    
+    // 開示データまたは加工データの場合に、指定した報告書名で条件が合致するかチェック
+    var conditionMet = (typeName === "開示データ" || typeName === "加工データ") && (documentName === requiredDocument);
+    
+    if (exclude) {
+      // 指定した報告書で「ない場合」をチェック
+      return !conditionMet || value === "";
+    } else {
+      // 指定した報告書で「ある場合」をチェック
+      return conditionMet ? value === "" : true;
+    }
+  }
   // エラー検知条件(ヘッダー部)
   var conditions = {
     "出典種別": function(value, row) {
-      var documentType = data[row][headers.indexOf("資料名称")];
+      var documentType = data[row][headerIndices.documentNameCol];//資料名称
 
       // 資料名称と出典種別の対応関係を定義
       var documentValueMap = {
@@ -16,7 +50,7 @@ function checkDataS2022(){
         "企業HP": "006"
       };
 
-      var disclosureYear = data[row][headers.indexOf("開示年度")];
+      var disclosureYear = data[row][headerIndices.disclosureYearCol];//開示年度
 
       //開示年度2021年のときNULLであること
       if (disclosureYear === 2021) {
@@ -32,13 +66,13 @@ function checkDataS2022(){
  
       var validValues = ["資料開示", "開示データ", "加工データ", "単位", "URL", "ページ数", "対象範囲"];
       var isValid = validValues.includes(value);
-      var startCol = headers.indexOf("【社会】男性従業員数");
+      var startCol = headerIndices.startCol;//【社会】男性従業員数")
     
       //資料開示の場合、収録項目のデータ入力がないこと
       //有報・CG報告書の場合、URL、ページ数、対象範囲のデータ入力がないこと
       if (value === "資料開示" || 
       (["URL", "ページ数", "対象範囲"].includes(value) && 
-      ["有価証券報告書", "コーポレートガバナンス報告書"].includes(data[row][headers.indexOf("資料名称")]))) {
+      ["有価証券報告書", "コーポレートガバナンス報告書"].includes(data[row][headers.headerIndices.documentNameCol]))) {
         if (startCol !== -1) {
           for (var col = startCol; col < data[row].length; col++) {
             if (data[row][col] !== "") {
@@ -61,7 +95,7 @@ function checkDataS2022(){
     },
 
     "資料名称": function(value) {
-      if(["有価証券報告書","コーポレートガバナンス報告書"].includes(value) && ["URL", "ページ数", "対象範囲"].includes(data[row][headers.indexOf("種別名")])){
+      if(["有価証券報告書","コーポレートガバナンス報告書"].includes(value) && ["URL", "ページ数", "対象範囲"].includes(data[row][headerIndices.typeNameCol])){
         return false
       }
       //「有価証券報告書」「コーポレートガバナンス報告書」「企業HP」のいずれかであること
@@ -70,7 +104,7 @@ function checkDataS2022(){
   
     "資料公表日": function(value,row) {
       //「有価証券報告書」または「コーポレートガバナンス報告書」の場合、空欄をエラーとする
-      var documentType = data[row][headers.indexOf("資料名称")];
+      var documentType = data[row][headerIndices.documentNameCol];
       if (["有価証券報告書","コーポレートガバナンス報告書"].includes(documentType) && value === ""){
         return false;
       }
@@ -96,7 +130,7 @@ function checkDataS2022(){
     
     "過年度：年": function(value, row) {
       //種別名が資料開示のときNULLであること
-      if (data[row][headers.indexOf("種別名")] === "資料開示") {
+      if (data[row][headerIndices.typeNameCol] === "資料開示") {
         return value === "";
       }
       //4桁の数字であること
@@ -104,7 +138,7 @@ function checkDataS2022(){
     },
     "過年度：年月／単位（加工値）": function(value, row) {
       //種別名が資料開示のときNULLであること
-      if (data[row][headers.indexOf("種別名")] === "資料開示") {
+      if (data[row][headerIndices.typeNameCol] === "資料開示") {
         return value === "";
       }
       //6桁の数字で末尾が「00」～「12」であること
@@ -119,46 +153,31 @@ function checkDataS2022(){
       var header = headers[col];
       var value = data[row][col];
       if (conditions[header] && !conditions[header](value, row)) {
-        sheet.getRange(row + 1, col + 1).setBackground("yellow");
-        sheet.getRange(flagRow + 1, col + 1).setValue(1);
+        setErrorHighlight(sheet, row, col, flagRow);
         }
     }
   };
 
-  //各項目の条件指定
-  var textdata = {
-    "【社会】男性役員数":function(value,row){
-      //有価証券報告書であること。
-      if ((data[row][headers.indexOf("種別名")] === "開示データ" ||data[row][headers.indexOf("種別名")] === "加工データ") && !(data[row][headers.indexOf("資料名称")] === "有価証券報告書")){
-        return value === "";
-      }
-      return true;
-    },
+  // 各項目の条件指定
+var textdata = {
+  "【社会】男性役員数": function(value, row) {
+    return checkForReport(value, row, data, headerIndices, "有価証券報告書", true); // 否定条件
+  },
+  "【社会】女性役員数": function(value, row) {
+    return checkForReport(value, row, data, headerIndices, "有価証券報告書", true); // 否定条件
+  },
+  "【社会】女性役員比率": function(value, row) {
+    return checkForReport(value, row, data, headerIndices, "有価証券報告書", true); // 否定条件
+  },
+};
 
-    "【社会】女性役員数":function(value,row){
-      //有価証券報告書であること。
-      if ((data[row][headers.indexOf("種別名")] === "開示データ" ||data[row][headers.indexOf("種別名")] === "加工データ") && !(data[row][headers.indexOf("資料名称")] === "有価証券報告書")){
-        return value === "";
-      }
-      return true;
-    },
-
-    "【社会】女性役員比率":function(value,row){
-      //有価証券報告書であること。
-      if ((data[row][headers.indexOf("種別名")] === "開示データ" ||data[row][headers.indexOf("種別名")] === "加工データ") && !(data[row][headers.indexOf("資料名称")] === "有価証券報告書")){
-        return value === "";
-      }
-      return true;
-    },
-  };
   // エラー検知とフラグ設定（各項目の条件指定）
   for (var row = 6; row < data.length; row++) {
     for (var col = 0; col < headers.length; col++) {
       var header = headers[col];
       var value = data[row][col];
       if (textdata[header] && !textdata[header](value, row)) {
-        sheet.getRange(row + 1, col + 1).setBackground("yellow");
-        sheet.getRange(flagRow + 1, col + 1).setValue(1);
+        setErrorHighlight(sheet, row, col, flagRow);
         }
     }
   };
@@ -194,9 +213,9 @@ function checkDataS2022(){
     var errorRows = [];
 
     for (var row = 6; row < data.length; row++) {
-      var documentName = data[row][headers.indexOf("資料名称")];
-      var typeName = data[row][headers.indexOf("種別名")];
-      var disclosureYear = data[row][headers.indexOf("開示年度")];
+      var documentName = data[row][headerIndices.documentNameCol];//資料名称
+    var typeName = data[row][headerIndices.typeNameCol];//種別名
+    var disclosureYear = data[row][headerIndices.disclosureYearCol];//開示年度
       
       if (typeName === "資料開示") {
         disclosureCount++;
@@ -210,7 +229,7 @@ function checkDataS2022(){
     
     if (uniqueCombinations.size !== disclosureCount) {
       // 修正箇所: エラーが発生した場合の処理
-      var typeNameCol = headers.indexOf("種別名");
+      var typeNameCol = headerIndices.typeNameCol;//種別名
       sheet.getRange(flagRow + 1, typeNameCol + 1).setValue(1);
       return false;
     }
@@ -219,10 +238,10 @@ function checkDataS2022(){
   // 資料名称をキーとして、種別名ごとに「過年度：年」「過年度：年月」の組み合わせが一致するかをチェック（行の入力漏れを検知）
   function checkCombinationConsistency() {
     var baseCombinations = {};
-    var typeNameCol = headers.indexOf("種別名");
-    var documentNameCol = headers.indexOf("資料名称");
-    var pastYearCol = headers.indexOf("過年度：年");
-    var pastYearMonthCol = headers.indexOf("過年度：年月／単位（加工値）");
+    var typeNameCol = headerIndices.typeNameCol;//種別名
+    var documentNameCol = headerIndices.documentNameCol; //資料名称
+    var pastYearCol = headerIndices.pastYearCol; //過年度：年
+    var pastYearMonthCol = headerIndices.pastYearMonthCol; //過年度：年月／単位（加工値）
 
     for (var row = 6; row < data.length; row++) {
       var typeName = data[row][typeNameCol];
@@ -270,14 +289,14 @@ function checkDataS2022(){
 
   //エラー検知とフラグ設定（行ずれ・データ不備）
   if (!checkDocumentDisclosure() || !checkCombinationConsistency()) {
-    var typeNameCol = headers.indexOf("種別名");
+    var typeNameCol = headerIndices.typeNameCol; //種別名
     sheet.getRange(flagRow + 1, typeNameCol + 1).setBackground("red");
   }
 
   // エラー検知条件(項目共通)
   for (var row = 6; row < data.length; row++) {
-    var typeName = data[row][headers.indexOf("種別名")];
-    var startCol = headers.indexOf("【社会】男性従業員数");
+    var typeName = data[row][headerIndices.typeNameCol];//種類別
+    var startCol = headerIndices.startCol;//【社会】男性従業員数
     
     //開示データにデータが収録されている場合、加工データにもデータが収録されていること
     if (startCol !== -1 && typeName === "開示データ") {
@@ -285,21 +304,19 @@ function checkDataS2022(){
         if (data[row][col] !== "") {
           var matchfound = false;
           for (var row2 = 6; row2 < data.length; row2++) {
-            if (data[row][headers.indexOf("出典種別")] === data[row2][headers.indexOf("出典種別")] &&
-            data[row][headers.indexOf("コード")] === data[row2][headers.indexOf("コード")] &&
-            data[row][headers.indexOf("資料名称")] === data[row2][headers.indexOf("資料名称")] &&
-            data[row][headers.indexOf("開示年度")] === data[row2][headers.indexOf("開示年度")] &&
-            data[row][headers.indexOf("過年度：年")] === data[row2][headers.indexOf("過年度：年")] &&
-            data[row][headers.indexOf("過年度：年月／単位（加工値）")] === data[row2][headers.indexOf("過年度：年月／単位（加工値）")] &&
-            (data[row2][headers.indexOf("種別名")] === "加工データ" || data[row2][headers.indexOf("種別名")] === "単位") ){
+            if (data[row][headerIndices.sourceTypeCol] === data[row2][headerIndices.sourceTypeCol] &&
+              data[row][headerIndices.codeCol] === data[row2][headerIndices.codeCol] &&
+              data[row][headerIndices.documentNameCol] === data[row2][headerIndices.documentNameCol] &&
+              data[row][headerIndices.disclosureYearCol] === data[row2][headerIndices.disclosureYearCol] &&
+              data[row][headerIndices.pastYearCol] === data[row2][headerIndices.pastYearCol] &&
+              data[row][headerIndices.pastYearMonthCol] === data[row2][headerIndices.pastYearMonthCol] &&
+              (data[row2][headerIndices.typeNameCol] === "加工データ" || data[row2][headerIndices.typeNameCol] === "単位")) {
               if (data[row2][col] === "") {
-                sheet.getRange(row2 + 1, col + 1).setBackground("yellow");
-                sheet.getRange(flagRow + 1, col + 1).setValue(1);
+                setErrorHighlight(sheet, row2, col,flagRow);
               }
               matchfound = true;
               if (data[row2][col] === ""){
-                sheet.getRange(row2 + 1, col + 1).setBackground("yellow");
-                sheet.getRange(flagRow + 1, col + 1).setValue(1);
+                setErrorHighlight(sheet, row2, col,flagRow);
               }
             }
           }
@@ -425,8 +442,7 @@ function checkDataS2022(){
           }
           var value = parseFloat(data[row][col]);
           if (isNaN(value) || value < thresholdRange.min || value > thresholdRange.max) {
-            sheet.getRange(row + 1, col + 1).setBackground("yellow");
-            sheet.getRange(flagRow + 1, col + 1).setValue(1);
+            setErrorHighlight(sheet, row, col, flagRow);
           }
         }
       }
@@ -442,8 +458,7 @@ function checkDataS2022(){
         var cellValue = String(data[row][col]);
         if(cellValue !== "" && !(cellValue.includes("https://")||cellValue.includes("http://"))){
           // エラー検知時に該当するセルの背景色を色塗りし、列の5行目に1を入力
-          sheet.getRange(row + 1, col + 1).setBackground("yellow");
-          sheet.getRange(flagRow + 1, col + 1).setValue(1);
+          setErrorHighlight(sheet, row, col, flagRow);
         }
       }
 
@@ -453,8 +468,7 @@ function checkDataS2022(){
         var cellValue = String(data[row][col]);
         if (cellValue !== "" && (cellValue.includes("https://")||cellValue.includes("http://"))) {
           // エラー検知時に該当するセルの背景色を色塗りし、列の5行目に1を入力
-          sheet.getRange(row + 1, col + 1).setBackground("yellow");
-          sheet.getRange(flagRow + 1, col + 1).setValue(1);
+          setErrorHighlight(sheet, row, col, flagRow);
         }
       }
     };
@@ -465,8 +479,7 @@ function checkDataS2022(){
         for (var col = startCol; col < data[row].length; col++){
           if (data[row][col] !== "" && isNaN(data[row][col])){
             //エラー検知時に該当するセルの背景色を色塗りし、列の5行目に1を入力
-            sheet.getRange(row + 1, col + 1).setBackground("yellow");
-            sheet.getRange(flagRow +1, col+1).setValue(1);
+            setErrorHighlight(sheet, row, col, flagRow);
           }
         }
       }
@@ -481,8 +494,7 @@ function checkDataS2022(){
             var isValid = !isNaN(value) || /^[0-9,.-]+$/.test(value);
             if (!isValid) {
             // エラー検知時に該当するセルの背景色を色塗りし、列の5行目に1を入力
-            sheet.getRange(row + 1, col + 1).setBackground("yellow");
-            sheet.getRange(flagRow +1, col + 1).setValue(1);
+            setErrorHighlight(sheet, row, col, flagRow);
             }
           }
         }
@@ -495,8 +507,7 @@ function checkDataS2022(){
         for (var col = startCol; col < data[row].length; col++){
           if(data[row][col] !== "" && !isNaN(data[row][col])){
            // エラー検知時に該当するセルの背景色を色塗りし、列の5行目に1を入力
-            sheet.getRange(row + 1, col + 1).setBackground("yellow");
-            sheet.getRange(flagRow +1, col + 1).setValue(1); 
+           setErrorHighlight(sheet, row, col, flagRow);
           }
         }
       }
