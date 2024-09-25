@@ -71,7 +71,7 @@ function checkForReport(value, row, data, headerIndices, requiredDocument = "有
       //有報・CG報告書の場合、URL、ページ数、対象範囲のデータ入力がないこと
       if (value === "資料開示" || 
       (["URL", "ページ数", "対象範囲"].includes(value) && 
-      ["有価証券報告書", "コーポレートガバナンス報告書"].includes(data[row][headers.headerIndices.documentNameCol]))) {
+      ["有価証券報告書", "コーポレートガバナンス報告書"].includes(data[row][headerIndices.documentNameCol]))) {
         if (startCol !== -1) {
           for (var col = startCol; col < data[row].length; col++) {
             if (data[row][col] !== "") {

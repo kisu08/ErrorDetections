@@ -154,7 +154,8 @@ function checkDataGdetail2023(){
   };
 
  // エラー検知とフラグ設定
- var seenKeys= {}; //キー項目を保持するオブジェクト
+ var seenKeys= {};  //「対象範囲No.」のキー項目を保持するオブジェクト
+ var seenKeysCov = {}; //「対象範囲」のキー項目を保持するオブジェクト
    for (var row = 6; row < data.length; row++) {
     for (var col = 0; col < headers.length; col++) {
       var header = headers[col];
@@ -165,27 +166,56 @@ function checkDataGdetail2023(){
         setErrorHighlight(sheet, row, col, flagRow);
       }
       
-      // 同じ「コード」「開示年度」「過年度：年」「過年度：年月」「親項目コード」「資料名称」「対象範囲」の組み合わせがあれば、「対象範囲No.」と「対象範囲」の値が一致しているかチェック
-      var keyCols = [headerIndices.codeCol, headerIndices.disclosureYearCol, headerIndices.pastYearCol, headerIndices.pastYearMonthCol, headerIndices.parentItemCodeCol, headerIndices.documentNameCol, headerIndices.rangeNoCol];
-      var keyValues = keyCols.map(function(colIndex) {
-        return data[row][headers.indexOf(colIndex)];
-      }).join("_");
-      
+      //「対象範囲No.」と「対象範囲」の組み合わせが適切かをチェック
+      // 同じ「コード」「開示年度」「過年度：年」「過年度：年月」「親項目コード」「資料名称」「対象範囲No.」の組み合わせがあれば、「対象範囲No.」と「対象範囲」の値が一致しているかチェック
+// 対象範囲No.の組み合わせをチェックするためのキー列
+      var keyColsCovNo = [headerIndices.codeCol, headerIndices.disclosureYearCol, headerIndices.pastYearCol, headerIndices.pastYearMonthCol, headerIndices.parentItemCodeCol, headerIndices.documentNameCol, headerIndices.rangeNoCol];
+      var keyValuesCovNoArray = keyColsCovNo.map(function(colIndex) {
+        var value = data[row][colIndex]; // colIndexを使ってデータを取得
+        return value;
+      });
+      var keyValuesCovNo = keyValuesCovNoArray.join("_");
       var rangeNoCol = headerIndices.rangeNoCol; //対象範囲No.
       var rangeCol = headerIndices.rangeCol;     //対象範囲
-      if (seenKeys[keyValues]) {
+      if (seenKeys[keyValuesCovNo]) {
         // 最初に見つけた行と比較
-        var firstRow = seenKeys[keyValues];
+        var firstRow = seenKeys[keyValuesCovNo];
         if (data[row][rangeCol] !== data[firstRow][rangeCol]) {
           // 一致していない場合、対象範囲No.と対象範囲のセルを赤色に設定
           sheet.getRange(row + 1, rangeNoCol + 1).setBackground("red");
           sheet.getRange(row + 1, rangeCol + 1).setBackground("red");
           sheet.getRange(flagRow + 1, rangeNoCol + 1).setValue(1);
           sheet.getRange(flagRow + 1, rangeCol + 1).setValue(1);
+        } else {
         }
       } else {
         // 新しいキーの組み合わせを記録
-        seenKeys[keyValues] = row;
+        seenKeys[keyValuesCovNo] = row;
+      }
+      
+      // 同じ「コード」「開示年度」「過年度：年」「過年度：年月」「親項目コード」「資料名称」「対象範囲」の組み合わせがあれば、「対象範囲No.」と「対象範囲」の値が一致しているかチェック
+      var keyColsCov = [headerIndices.codeCol, headerIndices.disclosureYearCol, headerIndices.pastYearCol, headerIndices.pastYearMonthCol, headerIndices.parentItemCodeCol, headerIndices.documentNameCol, headerIndices.rangeCol];
+      // keyValuesCovの値を取得する際もインデックスを使う
+      var keyValuesCovArray = keyColsCov.map(function(colIndex) {
+        var value = data[row][colIndex]; // colIndexを使ってデータを取得
+        return value;
+      });
+      var keyValuesCov = keyValuesCovArray.join("_");
+
+      if (seenKeysCov[keyValuesCov]) {
+        // 最初に見つけた行と比較
+        var firstRow = seenKeysCov[keyValuesCov];
+        if (data[row][rangeNoCol] !== data[firstRow][rangeNoCol]) {
+          // 一致していない場合、対象範囲No.と対象範囲のセルを赤色に設定
+          sheet.getRange(row + 1, rangeNoCol + 1).setBackground("red");
+          sheet.getRange(row + 1, rangeCol + 1).setBackground("red");
+          sheet.getRange(flagRow + 1, rangeNoCol + 1).setValue(1);
+          sheet.getRange(flagRow + 1, rangeCol + 1).setValue(1);
+        } else {
+        }
+      } else {
+        // 新しいキーの組み合わせを記録
+        seenKeysCov[keyValuesCov] = row;
       }
 
             //ヘッダーが「項番」で始まる場合、それの列の値が自然数であることをチェック
