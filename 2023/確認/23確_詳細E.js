@@ -4,24 +4,30 @@ function checkDataEdetail2023(){
   var headers = data[5]; // 6行目が項目名
   var flagRow = 4; // 5行目にフラグを立てる
 
-   // ヘッダーインデックスを先頭で定義
-   var headerIndices = {
-    codeCol: headers.indexOf("コード"), // コード列のインデックスを追加
-    disclosureYearCol: headers.indexOf("開示年度"), // 開示年度列のインデックスを追加
-    documentNameCol: headers.indexOf("資料名称"),
-    pastYearCol: headers.indexOf("過年度：年"),
-    pastYearMonthCol: headers.indexOf("過年度：年月"),
-    parentItemCol: headers.indexOf("親項目"),
-    parentItemCodeCol: headers.indexOf("親項目コード"), // 親項目コード列のインデックスを追加
-    rangeNoCol: headers.indexOf("対象範囲No."),
-    rangeCol: headers.indexOf("対象範囲"),
-    mergeFlagCol: headers.indexOf("合算フラグ"),
-    value1Col: headers.indexOf("数値1"),
-    value2Col: headers.indexOf("数値2"),
-    itemNo1Col: headers.indexOf("項番1"),
-    itemNo2Col: headers.indexOf("項番2"),
-    itemNameCol: headers.indexOf("項目名1")
-  };
+// ヘッダーインデックスを先頭で定義
+var headerIndices = {
+  codeCol: headers.indexOf("コード"), // コード列のインデックスを追加
+  disclosureYearCol: headers.indexOf("開示年度"), // 開示年度列のインデックスを追加
+  documentNameCol: headers.indexOf("資料名称"),
+  pastYearCol: headers.indexOf("過年度：年"),
+  pastYearMonthCol: headers.indexOf("過年度：年月"),
+  parentItemCol: headers.indexOf("親項目"),
+  parentItemCodeCol: headers.indexOf("親項目コード"), // 親項目コード列のインデックスを追加
+  rangeNoCol: headers.indexOf("対象範囲No."),
+  rangeCol: headers.indexOf("対象範囲"),
+  mergeFlagCol: headers.indexOf("合算フラグ"),
+  value1Col: headers.indexOf("数値1"), // 数値1のインデックス
+  value2Col: headers.indexOf("数値2"), // 数値2のインデックス
+  value3Col: headers.indexOf("数値3"), // 数値3のインデックス
+  value4Col: headers.indexOf("数値4"), // 数値4のインデックス
+  value5Col: headers.indexOf("数値5"), // 数値5のインデックス
+  value6Col: headers.indexOf("数値6"), // 数値6のインデックス
+  value7Col: headers.indexOf("数値7"), // 数値7のインデックス
+  value8Col: headers.indexOf("数値8"), // 数値8のインデックス
+  itemNo1Col: headers.indexOf("項番1"), // 項番1のインデックス
+  itemNo2Col: headers.indexOf("項番2"), // 項番2のインデックス
+  itemNameCol: headers.indexOf("項目名1"), // 項目名1のインデックス
+};
 
   // エラー検知してイエローに変更する関数
   function setErrorHighlight(sheet, row, col, flagRow) {
@@ -249,7 +255,7 @@ function checkDataEdetail2023(){
   };
 
   //合算フラグ1の場合に、正しく合計値が算出されているかをチェック
-  // 「数値2」の合算と「数値1」の比較
+  // 数値2がNULLなら数値3を、それもNULLなら数値4を...数値8まで合算して数値1と比較
   for (var row = 6; row < data.length; row++) {
     var sumFlag = data[row][headerIndices.mergeFlagCol];//合算フラグ
     if (sumFlag === 1) {
@@ -259,8 +265,8 @@ function checkDataEdetail2023(){
       }).join("_");
 
       // 合算のための変数を初期化
-      var uniqueValues = new Set();
-      var sumValue2 = 0;
+    var uniqueValues = new Set();
+    var sumValue = 0; // ここで sumValue を初期化
 
      // 同じキー項目を持つ行を探して数値2を合算
       for (var i = 6; i < data.length; i++) {
@@ -270,24 +276,34 @@ function checkDataEdetail2023(){
 
         if (currentKey === keyValuesSumFlag) {
           var value2 = data[i][headerIndices.value2Col];//数値2
+          var value2 = data[i][headerIndices.value2Col] || 0;
+          var value3 = data[i][headerIndices.value3Col] || 0;
+          var value4 = data[i][headerIndices.value4Col] || 0;
+          var value5 = data[i][headerIndices.value5Col] || 0;
+          var value6 = data[i][headerIndices.value6Col] || 0;
+          var value7 = data[i][headerIndices.value7Col] || 0;
+          var value8 = data[i][headerIndices.value8Col] || 0;
           var itemNo2 = data[i][headerIndices.itemNo2Col];//項番2
 
           // 数値2の値がNULLである場合は0として扱う
+          var actualValue = parseFloat(value2) || parseFloat(value3) || parseFloat(value4) ||
+                          parseFloat(value5) || parseFloat(value6) || parseFloat(value7) ||
+                          parseFloat(value8) || 0;
           if (value2 == null || value2 === ""){
             value2 = 0;
           }
 
           if (!uniqueValues.has(itemNo2)) {
             uniqueValues.add(itemNo2);
-            sumValue2 += parseFloat(value2); // 明示的に数値に変換
+            sumValue += actualValue; // 数値2〜数値8のいずれかの値を合算
           }
         }
       }
 
       var value1 = parseFloat(data[row][headerIndices.value1Col]); // 数値1を明示的に数値に変換
 
-      // 「数値2」の合算値と「数値1」が一致するかをチェック
-      if (sumValue2 !== value1) {
+      // 合算した値と数値1を比較
+      if (sumValue.toFixed(2) !== value1.toFixed(2)) {
         var cell = sheet.getRange(row + 1, headerIndices.value1Col + 1);
         cell.setBackground("red");
         sheet.getRange(flagRow + 1, headerIndices.value1Col + 1).setValue(1);
