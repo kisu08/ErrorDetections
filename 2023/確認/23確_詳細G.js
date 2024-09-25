@@ -168,7 +168,7 @@ function checkDataGdetail2023(){
       
       //「対象範囲No.」と「対象範囲」の組み合わせが適切かをチェック
       // 同じ「コード」「開示年度」「過年度：年」「過年度：年月」「親項目コード」「資料名称」「対象範囲No.」の組み合わせがあれば、「対象範囲No.」と「対象範囲」の値が一致しているかチェック
-// 対象範囲No.の組み合わせをチェックするためのキー列
+      // 対象範囲No.の組み合わせをチェックするためのキー列
       var keyColsCovNo = [headerIndices.codeCol, headerIndices.disclosureYearCol, headerIndices.pastYearCol, headerIndices.pastYearMonthCol, headerIndices.parentItemCodeCol, headerIndices.documentNameCol, headerIndices.rangeNoCol];
       var keyValuesCovNoArray = keyColsCovNo.map(function(colIndex) {
         var value = data[row][colIndex]; // colIndexを使ってデータを取得
@@ -186,7 +186,6 @@ function checkDataGdetail2023(){
           sheet.getRange(row + 1, rangeCol + 1).setBackground("red");
           sheet.getRange(flagRow + 1, rangeNoCol + 1).setValue(1);
           sheet.getRange(flagRow + 1, rangeCol + 1).setValue(1);
-        } else {
         }
       } else {
         // 新しいキーの組み合わせを記録

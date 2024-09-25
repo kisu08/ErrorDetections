@@ -182,7 +182,6 @@ var headerIndices = {
           sheet.getRange(row + 1, rangeCol + 1).setBackground("red");
           sheet.getRange(flagRow + 1, rangeNoCol + 1).setValue(1);
           sheet.getRange(flagRow + 1, rangeCol + 1).setValue(1);
-        } else {
         }
       } else {
         // 新しいキーの組み合わせを記録
