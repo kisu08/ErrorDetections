@@ -251,12 +251,12 @@ function checkDataGdetail2023(){
 
           if (!uniqueValues.has(itemNo2)) {
             uniqueValues.add(itemNo2);
-            sumValue2 += value2;
+            sumValue2 += parseFloat(value2); // 明示的に数値に変換
           }
         }
       }
 
-      var value1 = data[row][headerIndices.value1Col];//数値1
+      var value1 = parseFloat(data[row][headerIndices.value1Col]); // 数値1を明示的に数値に変換
 
       // 「数値2」の合算値と「数値1」が一致するかをチェック
       if (sumValue2 !== value1) {
