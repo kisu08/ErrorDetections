@@ -16,11 +16,52 @@ function checkDataS2023(){
     startCol: headers.indexOf("【社会】男性従業員数"),
     disclosureDateCol: headers.indexOf("資料公表日")
   };
+  // 色がついているセルをカウントしてA5に表示する関数
+function countColoredCells(sheet) {
+  // A7以降のA列の範囲を取得
+  var range = sheet.getRange('A7:A');
+  var backgrounds = range.getBackgrounds();
+  
+  var count = 0;
+  
+  // 色がついているセルをカウント
+  for (var i = 0; i < backgrounds.length; i++) {
+    if (backgrounds[i][0] !== '#ffffff' && backgrounds[i][0] !== '') {
+      count++;
+    }
+  }
+  
+  // A5A6セルを連結し、エラー行数を表示
+    var cell = sheet.getRange('A5:A6');
+    if (count > 0) {
+      // エラーがある場合の表示
+      cell.merge() // A5A6を連結
+          .setValue("エラー行数: " + count + "行")
+          .setFontColor('red')          // 赤文字
+          .setFontWeight('bold')        // 太字
+          .setHorizontalAlignment('center') // 水平方向の中央揃え
+          .setVerticalAlignment('middle')   // 垂直方向の中央揃え
+          .setFontSize(13)              // フォントサイズを13に設定
+          .setBackground('#FFCCCC');    // 明るい赤色
+    } else {
+      // エラーがない場合の表示
+      cell.merge() // A5A6を連結
+          .setValue("データは正常です") // メッセージを「データは正常です」に変更
+          .setFontColor('blue')         // 青文字
+          .setFontWeight('bold')        // 太字
+          .setHorizontalAlignment('center') // 水平方向の中央揃え
+          .setVerticalAlignment('middle')   // 垂直方向の中央揃え
+          .setFontSize(13)              // フォントサイズを13に設定
+          .setBackground('#CCE5FF');    // 明るい青色
+    }
+  }
 
-  // エラー検知してイエローに変更する関数
+  // エラー検知してイエローに変更し、A列に「エラーが発生」を追加する関数
   function setErrorHighlight(sheet, row, col, flagRow) {
-    sheet.getRange(row + 1, col + 1).setBackground("yellow");
-    sheet.getRange(flagRow + 1, col + 1).setValue(1);
+    sheet.getRange(row + 1, col + 1).setBackground("yellow");  // エラーセルの背景色を黄色に変更
+    sheet.getRange(flagRow + 1, col + 1).setValue(1);  // フラグ行に1をセット
+    sheet.getRange(row + 1, 1).setValue("入力に不備があります");  // A列にエラーメッセージをセット
+    sheet.getRange(row + 1, 1).setBackground("orange");
   }
   // 有価証券報告書からの収録条件を共通化
   function checkForReport(value, row, data, headerIndices, requiredDocument = "有価証券報告書", exclude = false) {
@@ -230,6 +271,8 @@ var textdata = {
       // 資料公表日が一致しない場合
       sheet.getRange(row + 1, dateIndex + 1).setBackground("yellow");
       sheet.getRange(flagRow + 1, dateIndex + 1).setValue(1);
+      sheet.getRange(row + 1, 1).setValue("公表日一致していません");  // A列にエラーメッセージをセット
+      sheet.getRange(row + 1, 1).setBackground("tan");
       errorDetected = true;
     }
   }
@@ -238,7 +281,6 @@ var textdata = {
   function checkDocumentDisclosure() {
     var disclosureCount = 0;
     var uniqueCombinations = new Set();
-    var errorRows = [];
 
     for (var row = 6; row < data.length; row++) {
       var documentName = data[row][headerIndices.documentNameCol];//資料名称
@@ -305,7 +347,14 @@ var textdata = {
           if (allSets.size !== typeNameSets[typeName].size || 
           ![...allSets].every(value => typeNameSets[typeName].has(value))) {
             var mismatch = 'Mismatch found in document: ${documentName}, type: ${typeName}';
-            console.log(mismatch);            
+            console.log(mismatch);
+
+             // エラー行のA列にエラーメッセージを表示する
+          var row = data.findIndex(r => r[documentNameCol] === documentName && r[typeNameCol] === typeName);
+          if (row !== -1) {
+            sheet.getRange(row + 1, 1).setValue("一致していません");
+            sheet.getRange(row + 1, 1).setBackground("tan");
+          }            
             sheet.getRange(flagRow + 1, typeNameCol + 1).setValue(1);
             return false;
           }
@@ -608,6 +657,8 @@ var textdata = {
         var flagCol = headerIndices.typeNameCol;//種別名
         sheet.getRange(flagRow + 1, flagCol + 1).setValue(1);
         sheet.getRange(flagRow + 1, flagCol + 1).setBackground("red");
+        sheet.getRange(row + 1, 1).setValue("エラーが発生しています");  // A列にエラーメッセージをセット
+        sheet.getRange(row + 1, 1).setBackground("orange");
       }
     }
   };
@@ -642,6 +693,7 @@ var textdata = {
       sheet.getRange(row + 1, 2).setBackground("red");
     });
   }
-
+// エラー行のカウントを実行
+  countColoredCells(sheet);
   SpreadsheetApp.getUi().alert('確認処理が正常に完了しました');
 };

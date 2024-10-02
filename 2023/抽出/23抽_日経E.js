@@ -27,7 +27,7 @@ function searchDataE2023() {
   }
 
   // 確認2023(日経E)のB2セルの値を取得
-  var codeToSearch = sheetB.getRange('B2').getValue();
+  var codeToSearch = sheetB.getRange('C2').getValue();
 
   // E（日経＋QUICK合計）の範囲を取得
   var dataA = sheetA.getDataRange().getValues();
@@ -69,20 +69,20 @@ function searchDataE2023() {
     var rowIndex = matchingRows[r];
     var dataToReflect = dataA[rowIndex];
 
-    for (var j = 0; j < headersB.length; j++) {
-      if (j < 10) { // J列まで
+    for (var k = 0; k < headersB.length; k++) {
+      if (k < 11) { // J列まで
         // 確認2023(日経E)の5行目のJ列までとE（日経＋QUICK合計）3行目の項目名を比較
-        var headerIndexA3 = headersA3.indexOf(headersB[j]);
+        var headerIndexA3 = headersA3.indexOf(headersB[k]);
         if (headerIndexA3 !== -1) {
-          var cell = sheetB.getRange(startRowB + r, j+1);
+          var cell = sheetB.getRange(startRowB + r, k+1);
           cell.setNumberFormat('@'); //書式をテキストに設定
           cell.setValue(dataToReflect[headerIndexA3]);
         }
       } else {
         // 確認2023(日経E)の5行目のJ列以降とE（日経＋QUICK合計）2行目の項目名を比較
-        var headerIndexA2 = headersA2.indexOf(headersB[j]);
+        var headerIndexA2 = headersA2.indexOf(headersB[k]);
         if (headerIndexA2 !== -1) {
-          var cell = sheetB.getRange(startRowB + r,j+1);
+          var cell = sheetB.getRange(startRowB + r,k+1);
           cell.setNumberFormat('@'); //書式をテキストに設定
           cell.setValue(dataToReflect[headerIndexA2]);
         }
