@@ -280,6 +280,12 @@ function countColoredCells(sheet) {
           if (allSets.size !== typeNameSets[typeName].size || 
           ![...allSets].every(value => typeNameSets[typeName].has(value))) {
             console.log(`Mismatch found in document: ${documentName}, type: ${typeName}`);
+            // エラー行のA列にエラーメッセージを表示する
+          var row = data.findIndex(r => r[documentNameCol] === documentName && r[typeNameCol] === typeName);
+          if (row !== -1) {
+            sheet.getRange(row + 1, 1).setValue("一致していません");
+            sheet.getRange(row + 1, 1).setBackground("tan");
+          } 
             sheet.getRange(flagRow + 1, typeNameCol + 1).setValue(1);
             return false;
           }
