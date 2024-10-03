@@ -118,6 +118,8 @@ function countColoredCells(sheet) {
             if (data[row][col] !== "") {
               for (var errorCol = startCol; errorCol < data[row].length; errorCol++) {
                 sheet.getRange(row + 1, errorCol + 1).setBackground("yellow");
+                sheet.getRange(row + 1, 1).setValue("不正なデータです");  // A列にエラーメッセージをセット
+                sheet.getRange(row + 1, 1).setBackground("orange");
               }
               return false;
             }
@@ -375,6 +377,8 @@ var textdata = {
   if (!checkDocumentDisclosure() || !checkCombinationConsistency()) {
     var typeNameCol = headerIndices.typeNameCol; //種別名
     sheet.getRange(flagRow + 1, typeNameCol + 1).setBackground("red");
+    sheet.getRange(row + 1, 1).setValue("行ずれ・データ不備です");  // A列にエラーメッセージをセット
+      sheet.getRange(row + 1, 1).setBackground("orange");
   }
 
   // エラー検知条件(項目共通)
@@ -549,6 +553,8 @@ var textdata = {
         sheet.getRange(row + 1, pastYearMonthCol + 1).setBackground("yellow");
         sheet.getRange(flagRow +1, pastYearCol + 1).setValue(1); 
         sheet.getRange(flagRow +1, pastYearMonthCol + 1).setValue(1);
+        sheet.getRange(row + 1, 1).setValue("一致していません");  // A列にエラーメッセージをセット
+      sheet.getRange(row + 1, 1).setBackground("orange");
       }
     }
   };
@@ -636,6 +642,8 @@ var textdata = {
     sheet.getRange(5, 2).setBackground("red").setValue(1);
     duplicateRows.forEach(function(row) {
       sheet.getRange(row + 1, 2).setBackground("red");
+      sheet.getRange(row + 1, 1).setValue("複数存在します");  // A列にエラーメッセージをセット
+      sheet.getRange(row + 1, 1).setBackground("orange");
     });
   }
   // エラー行のカウントを実行

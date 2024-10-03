@@ -27,7 +27,7 @@ function searchDataGdetail2023() {
   }
 
   // 確認2023(詳細G)のB2セルの値を取得
-  var codeToSearch = sheetB.getRange('B2').getValue();
+  var codeToSearch = sheetB.getRange('C2').getValue();
 
   // G詳細の範囲を取得
   var dataA = sheetA.getDataRange().getValues();
@@ -63,7 +63,7 @@ function searchDataGdetail2023() {
     var rowIndex = matchingRows[r];
     var dataToReflect = dataA[rowIndex];
 
-    for (var j = 0; j < headersB.length; j++) {
+    for (var k = 0; k < headersB.length; k++) {
       // 確認2023(詳細G)の6行目のB列までとG詳細2行目の項目名を比較
       var headerIndexA = headersA.indexOf(headersB[j]);
       if (headerIndexA !== -1) {

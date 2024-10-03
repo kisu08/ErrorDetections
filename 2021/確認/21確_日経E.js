@@ -205,6 +205,8 @@ checkYearNameConsistency();
   function markErrorColumn(headerName, color) {
     var colIndex = headers.indexOf(headerName);
     sheet.getRange(flagRow + 1, colIndex + 1).setBackground(color);
+    sheet.getRange(row + 1, 1).setValue("一貫していません");  // A列にエラーメッセージをセット
+  　sheet.getRange(row + 1, 1).setBackground("orange");
   }
 
   // 開示年度と資料名称の一致チェック関数
