@@ -217,8 +217,6 @@ function countColoredCells(sheet) {
           sheet.getRange(row + 1, rangeCol + 1).setBackground("red");
           sheet.getRange(flagRow + 1, rangeNoCol + 1).setValue(1);
           sheet.getRange(flagRow + 1, rangeCol + 1).setValue(1);
-          sheet.getRange(row + 1, 1).setValue("一致していません");  // A列にエラーメッセージをセット
-          sheet.getRange(row + 1, 1).setBackground("tan");
         }
       } else {
         // 新しいキーの組み合わせを記録

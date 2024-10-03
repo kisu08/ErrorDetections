@@ -65,9 +65,9 @@ function searchDataGdetail2023() {
 
     for (var k = 0; k < headersB.length; k++) {
       // 確認2023(詳細G)の6行目のB列までとG詳細2行目の項目名を比較
-      var headerIndexA = headersA.indexOf(headersB[j]);
+      var headerIndexA = headersA.indexOf(headersB[k]);
       if (headerIndexA !== -1) {
-        var cell = sheetB.getRange(startRowB + r, j+1);
+        var cell = sheetB.getRange(startRowB + r, k+1);
         cell.setNumberFormat('@'); //書式をテキストに設定
         cell.setValue(dataToReflect[headerIndexA]);
       }
