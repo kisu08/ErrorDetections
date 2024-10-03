@@ -377,8 +377,6 @@ var textdata = {
   if (!checkDocumentDisclosure() || !checkCombinationConsistency()) {
     var typeNameCol = headerIndices.typeNameCol; //種別名
     sheet.getRange(flagRow + 1, typeNameCol + 1).setBackground("red");
-    sheet.getRange(row + 1, 1).setValue("行ずれ・データ不備です");  // A列にエラーメッセージをセット
-    sheet.getRange(row + 1, 1).setBackground("orange");
   }
 
   // エラー検知条件(項目共通)
