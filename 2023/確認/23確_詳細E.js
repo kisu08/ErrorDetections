@@ -91,18 +91,66 @@ function countColoredCells(sheet) {
       return value === 2023;
     },
 
-    "過年度：年": function(value) {
-      //4桁の数字であること
-      //NULLでないこと
-      return /^[0-9]{4}$/.test(value);
+    "開示年度": function(value) {
+      //値が「2023」あること
+      return value === 2023;
     },
+
+    "過年度：年": function(value, row) {
+      // 種別名が資料開示のときNULLであること
+      if (data[row][headerIndices.typeNameCol] === "資料開示") {
+        return value === "";
+      }
+      // 4桁の数字であること
+      if (!/^[0-9]{4}$/.test(value)) {
+        return false;
+      }
+
+      // 数字の打ち間違いで異常に大きいまたは小さい年を検出（2000～2024年の範囲内）
+      var year = parseInt(value, 10);
+      return year >= 2000 && year <= 2024;
+      },
     
-    "過年度：年月": function(value) {
-      //6桁の数字で末尾が「00」～「12」であること
-      //NULLでないこと
-      var valueStr = value.toString(); // 数値を文字列に変換
-      return /^[0-9]{6}$/.test(valueStr) && /^(00|01|02|03|04|05|06|07|08|09|10|11|12)$/.test(valueStr.slice(-2));
-    },
+    "過年度：年月／単位（加工値）": function(value, row) {
+      // 種別名が資料開示のときNULLであること
+      if (data[row][headerIndices.typeNameCol] === "資料開示") {
+        return value === "";
+      }
+      
+      // 6桁の数字で末尾が「00」～「12」であること
+      var valueStr = value.toString();
+      if (!/^[0-9]{6}$/.test(valueStr) || !/^(00|01|02|03|04|05|06|07|08|09|10|11|12)$/.test(valueStr.slice(-2))) {
+        return false;
+      }
+
+      // 年月の年部分が2000～2024年の範囲内であること
+      var yearMonth = parseInt(valueStr.slice(0, 4), 10);
+      if (yearMonth < 2000 || yearMonth > 2024) {
+        return false;
+      }
+
+      // 過年度と過年度年月の整合性チェック
+      var pastYearValue = data[row][headerIndices.pastYearCol];
+      var pastYear = parseInt(pastYearValue, 10);
+      var month = parseInt(valueStr.slice(-2), 10); // 月部分を取り出す
+
+      // 過年度年月の年が過年度年よりも下回る場合はエラー
+      if (yearMonth < pastYear) {
+        return false;
+      }
+
+      // 月が12以外の場合、過年度と過年度年月の年が1年違っていても許容する
+      if (month !== 12 && Math.abs(pastYear - yearMonth) > 1) {
+        return false;
+      }
+
+      // 月が12の場合、過年度と過年度年月の年が一致することを確認
+      if (month === 12 && pastYear !== yearMonth) {
+        return false;
+      }
+
+      return true;
+    }, 
 
     "親項目": function(value){
       //親項目は詳細データ収録対象の項目名であること
